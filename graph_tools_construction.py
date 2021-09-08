@@ -1,12 +1,9 @@
 
 import numpy as np
-import networkx as nx
-# import impute as imp
 from sklearn import datasets, linear_model
 import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as ssd
 import sklearn
-# import calcom
 from numpy import genfromtxt
 import sklearn.metrics as sk 
 import matplotlib
@@ -23,10 +20,10 @@ To Do:
     -partial correlation???
     -mutual information score for adjacency matrix
     -other norms in heat kernel
-    -dendrogram cut method
+    -dynamic cut
     -subspace distances
-    
-
+    -comment supra adjacency and centrality algorithms
+    -sanity check Z dimensions in linkage matrix
 '''
 
 
@@ -57,6 +54,7 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
         AdjacencyMatrix = normalized_X.T @ normalized_X
         if not negative:
             AdjacencyMatrix  = np.abs(AdjacencyMatrix)
+        AdjacencyMatrix[np.where(AdjacencyMatrix > 1)] = 1
 
 
     elif msr == 'heatkernel':
@@ -496,7 +494,7 @@ def sim2dist(S):
     inputs: similarity matrix
     outputs: distance matrix
     '''
-    if not (S.all() <=1) and (S.all() >=0):
+    if not np.any(S <=1) and np.any(S >=0):
         print('similarity is not between zero and one')
         D = None
     else:
@@ -538,7 +536,13 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
                 subsets[i] = j
                 break #removing this break statement would be great!
 
-    Z = -1*np.ones((len(all_clusters_node)-m,4))
+    #SANITY CHECK THIS
+    if len(all_clusters_node) > m:
+        Z_dim = len(all_clusters_node)-m
+    else:
+        Z_dim = len(all_clusters_node)
+        print(Z_dim)
+    Z = -1*np.ones((Z_dim,4))
 
     #this might be able to be done better
     for j in range(m,num_clusters,1):
@@ -585,13 +589,37 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
             for nodeA in cl1:
                 for nodeB in cl2:
                     dist+= Dist[nodeA,nodeB]
-            Z[ii,2] = dist/sz1 + dist/sz2   
+            Z[ii,2] = dist/sz1 + dist/sz2  
+    else:
+        print('clst_dst not recognized')
 
     return Z
 
 
 
-def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generated_dendrogram.png', title='Dendrogram'):
+def cut_tree(Z, n_clusters = None, height = None):
+    '''
+    Cut a linkage matrix and return the clustering.
+
+    inputs: Z
+                a numpy array of a linkage matrix (see scipy.cluster.hierarchy.linkage_matrix for the format)
+            n_clusters
+                an integer or list of integers for the number of clusters
+            height
+                the height or lists of heights of the cut
+    outputs:
+            the_clustering
+                numpy array of the cluster labels of the nodes in Z.  
+                ith column corresponds with the ith entry of n_clusters or height
+    '''
+    the_clustering = sch.cut_tree(Z, n_clusters, height)
+    
+    return the_clustering
+    
+              
+              
+             
+def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generated_dendrogram.png', title='Dendrogram', just_dendrogram = False):
 
     '''
     A function that generates a dendrogram
@@ -610,21 +638,26 @@ def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generat
     Z = linkage_matrix(all_clusters_node, A, clst_dst)
     
     
-    fig = pylab.figure(figsize=(8,8))
-    ax1 = fig.add_axes([0.07,0.03,0.26,0.88])
-    Z_den = sch.dendrogram(Z,orientation='left')
-#     ax1.set_xticks([])
-    ax1.set_yticks([])
+    if just_dendrogram:
+        fig = pylab.figure(figsize=(8,8))
+        Z_den = sch.dendrogram(Z)
+        plt.xlabel('Node Number')
+    
+    else:
+        fig = pylab.figure(figsize=(8,8))
+        ax1 = fig.add_axes([0.07,0.03,0.26,0.88])
+        Z_den = sch.dendrogram(Z,orientation='left')
+    #     ax1.set_xticks([])
+        ax1.set_yticks([])
 
-    axmatrix = fig.add_axes([0.34,0.03,0.6,0.88])
-    fig.suptitle(title, fontsize=35)
-    idx1 = Z_den['leaves']
-    print(X.shape)
-    X = X[:,idx1].T
-    im = axmatrix.matshow(X, aspect='auto', origin='lower', cmap=pylab.cm.YlGnBu)
-    cbar = fig.colorbar(im)
-    axmatrix.set_xticks([])
-    axmatrix.set_yticks([])
+        axmatrix = fig.add_axes([0.34,0.03,0.6,0.88])
+        fig.suptitle(title, fontsize=35)
+        idx1 = Z_den['leaves']
+        X = X[:,idx1].T
+        im = axmatrix.matshow(X, aspect='auto', origin='lower', cmap=pylab.cm.YlGnBu)
+        cbar = fig.colorbar(im)
+        axmatrix.set_xticks([])
+        axmatrix.set_yticks([])
 
     #fig.show()
 
@@ -632,7 +665,80 @@ def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generat
     
 
     
+    
+def supra_adjacency(dataset, time_weight = 'mean', msr = 'parcor', epsilon = 0, h_k_param = 2, negative = False, weighted = True):
+    
+    node_list = []
+    A = []
+    for X in dataset:
+        A1 = adjacency_matrix(X,msr,epsilon)
+        node_list.append(np.arange(A1[0].shape[0]))
+        A.append(A1)
 
+
+    n,m = A[0].shape
+
+    N = m*len(A)
+    sA = np.zeros((N,N))
+    for i in range(len(A)):
+        for j in range(len(A)):
+            if i == j:
+                sA[i*m:(i+1)*m, i*m:(i+1)*m] = A[i]
+            if i == j+1:
+                #add in other time_weight schemes here
+                if time_weight == 'mean':
+                    time_weight1 = np.mean(A)
+                else:
+                    print('time weight not recognized')
+
+                sA[i*m:(i+1)*m,j*m:(j+1)*m] = time_weight1*np.eye(m)
+
+    return sA
+
+def centrality_scores(A, centrality = 'large_evec'):
+    
+    if centrality == 'large_evec':
+        W,V = np.linalg.eig(A)
+        scores = np.real(V[:,W.argmax()])
+        
+    elif centrality == 'page_rank':
+        n = A.shape[0]
+        M = np.zeros((n,n))
+        for i in range(n): 
+            M[:,i] = A[:,i]/np.sum(A[:,i])
+
+        #taken from da wikipedia
+        eps = 0.001
+        d = 0.85
+
+        v = np.random.rand(n, 1)
+        v = v / np.linalg.norm(v, 1)
+        last_v = np.ones((n, 1), dtype=np.float32) * 100
+        M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
+
+        while np.linalg.norm(v - last_v, 2) > eps:
+            last_v = v
+            v = np.matmul(M_hat, v)
+        scores = v
+        
+    else:
+        print('centrality type not recognized')
+        
+    return scores
+
+        
+def supra_adjacency_scores(sA, centrality, n_times, n_nodes): 
+    N = sA.shape[0]
+
+    scores = centrality_scores(sA, centrality)
+       
+
+    scores1 = np.zeros(n_nodes)
+    for i in range(n_nodes):
+        for j in range(n_times):
+            scores1[i] += np.abs(scores[i+n_nodes*j])
+            
+    return scores1
 
 
 

@@ -219,7 +219,7 @@ def laplace_partition(A, fiedler = True, k = 1):
     '''
     A function that partitions the data using the graph Laplacian
 
-    CAUTION--- NETWORK OF A MUST BE FULLY CONNECTED to do this calculation!!!
+    CAUTION--- NETWORK OF A MUST BE CONNECTED to do this calculation!!!
 
     inputs: 1) adjacency matrix
                     represents a directed weighted graph of the data
@@ -258,11 +258,14 @@ def laplace_partition(A, fiedler = True, k = 1):
 
     #find fiedler vector
     fiedler_vec = evecs[:,np.where(evals == fiedler_eval)[0]]
+    
+    if fiedler_vec.shape[1]>1:
+        fiedler_vec = fiedler_vec[:,[0]]
 
     #sort nodes into two banks using sign of fiedler vector
     class_labels = np.zeros(m)
     class_labels[np.where(fiedler_vec < 0)[0]] = 1
-
+    
     #return the indices of the nodes in these banks in two lists
     classA = np.argwhere(class_labels==0)
     classB = np.argwhere(class_labels==1)
@@ -274,6 +277,8 @@ def laplace_partition(A, fiedler = True, k = 1):
 def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_node, fiedler_switch =True):
     '''
     A recursive function that clusters the graph using laplace partitiions
+    
+    CAUTION--- NETWORK OF A MUST BE COMPLETELY CONNECTED to do this calculation!!!
 
     inputs: 1) adjacency matrix
                     represents a directed weighted graph of the data
@@ -323,7 +328,6 @@ def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_no
     if s1 >= min_clust_sz and s2 >= min_clust_sz:
         cluster_laplace(A1, clst_adj, nodes1, min_clust_sz, clst_node, all_clusters_node)
         cluster_laplace(A2, clst_adj, nodes2, min_clust_sz, clst_node, all_clusters_node)
-
 
 
 
@@ -536,12 +540,10 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
                 subsets[i] = j
                 break #removing this break statement would be great!
 
-    #SANITY CHECK THIS
-    if len(all_clusters_node) > m:
-        Z_dim = len(all_clusters_node)-m
-    else:
-        Z_dim = len(all_clusters_node)
-        print(Z_dim)
+    
+    Z_dim = len(all_clusters_node)-m
+    
+        
     Z = -1*np.ones((Z_dim,4))
 
     #this might be able to be done better
@@ -572,9 +574,10 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
         #add the cluster size
         Z[j-m,3] = len(all_clusters_node[j])
 
+    
     if clst_dst == 'dumb':
         Z[:,2] = Z[:,3].copy()
-
+    
     #average cut size
     elif clst_dst == 'ced':
         Dist = sim2dist(A)

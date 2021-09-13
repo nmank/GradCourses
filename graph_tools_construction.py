@@ -1,4 +1,3 @@
-
 import numpy as np
 from sklearn import datasets, linear_model
 import scipy.cluster.hierarchy as sch
@@ -32,26 +31,30 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
     '''
     A function that builds an adjacecny matrix out of data using two methods
 
-    inputs: 1) data matrix 
-                    n rows m columns (m data points living in R^n)
-            2) method for calculating distance between data points 
-                    corrolation or heatkernel or partial correlation
-             3) epsilon
-                    a user-parameter that determines will disconnect 
-                    all points that are further away or less corrolated than epsilon
-             3) weighted
-                    create a weighted matrix if true
-             4) negative 
-                    include negative correlations? (default is False)
-    outputs: 1) adjacency matrix
+    inputs: data matrix 
+                a numpy array with n rows m columns (m data points living in R^n)
+            msr
+                a string for method for calculating distance between data points 
+                corrolation or heatkernel or partial correlation
+            epsilon
+                a number that is a user-parameter that determines will disconnect 
+                all points that are further away or less corrolated than epsilon
+            h_k_param
+                a number for the heat parameter for the heat kernel similarity measure
+            weighted
+                a boolean that creates a weighted matrix if true
+            negative 
+                a boolean to include negative correlations? (default is False)
+    outputs: adjacency matrix
                     represents a directed weighted graph of the data (dimensions m x m)
     '''
     n,m = X.shape;
 
     if msr == 'correlation':
-        norms = np.repeat(np.expand_dims(np.linalg.norm(X, axis=0),axis= 0), 5, axis=0)
+        norms = np.repeat(np.expand_dims(np.linalg.norm(X, axis=0),axis= 0), n, axis=0)
+        norms[np.where(norms)==0] = 1 #so we don't divide by 0s
         normalized_X = X/norms
-        AdjacencyMatrix = normalized_X.T @ normalized_X
+        AdjacencyMatrix = normalized_X.T @ normalized_X - np.eye(m)
         if not negative:
             AdjacencyMatrix  = np.abs(AdjacencyMatrix)
         AdjacencyMatrix[np.where(AdjacencyMatrix > 1)] = 1
@@ -502,7 +505,7 @@ def sim2dist(S):
         print('similarity is not between zero and one')
         D = None
     else:
-        D = np.sqrt(2*(1-S))-np.sqrt(2*np.eye(S.shape[0]))
+        D = np.sqrt(2*(1-S))
     return D
 
 
@@ -670,7 +673,28 @@ def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generat
     
     
 def supra_adjacency(dataset, time_weight = 'mean', msr = 'parcor', epsilon = 0, h_k_param = 2, negative = False, weighted = True):
-    
+    '''
+    Generates a supre-adjacency matrix from a list of data matrices.
+
+    inputs: dataset
+                a list of numpy arrays that are data matrices for the same dataset at times 1,2,3,...
+            time_weight
+                a number for type of edge weight to connect the same nodes between adjacent time steps
+            msr
+                a string for method for calculating distance between data points 
+                corrolation or heatkernel or partial correlation
+            epsilon
+                a number that is a user-parameter that determines will disconnect 
+                all points that are further away or less corrolated than epsilon
+            h_k_param
+                a number for the heat parameter for the heat kernel similarity measure
+            weighted
+                a boolean that creates a weighted matrix if true
+            negative 
+                a boolean to include negative correlations? (default is False)
+                
+    outputs: sA a numpy array that represents the supra-adjacency matrix
+    '''
     node_list = []
     A = []
     for X in dataset:
@@ -698,7 +722,23 @@ def supra_adjacency(dataset, time_weight = 'mean', msr = 'parcor', epsilon = 0, 
 
     return sA
 
+
+
 def centrality_scores(A, centrality = 'large_evec'):
+    '''
+    A method for computing the centrality of the nodes in a network
+    
+    Inputs:
+        A - a numpy array that is the adjacency matrix
+        centrality - a string for the type of centrality
+                     options are:
+                         'largest_evec'
+                         'page_rank'
+    Outputs:
+        scores - a numpy array of the centrality scores for the nodes in the network
+                 index in scores corresponds to index in A
+    
+    '''
     
     if centrality == 'large_evec':
         W,V = np.linalg.eig(A)
@@ -729,8 +769,25 @@ def centrality_scores(A, centrality = 'large_evec'):
         
     return scores
 
-        
+
+
 def supra_adjacency_scores(sA, centrality, n_times, n_nodes): 
+    '''
+    A method for computing the centrality of the nodes in a time series network
+    
+    Inputs:
+        sA - a numpy array that is a supra adjacency matrix
+        centrality - a string for the type of centrality
+                     options are:
+                         'largest_evec'
+                         'page_rank'
+        n_times - the number of times points in the dataset
+        n_nodes - the number of nodes at one time
+    Outputs:
+        scores - a numpy array of the centrality scores for the nodes in the network
+                 index in scores corresponds to index in A
+    
+    '''
     N = sA.shape[0]
 
     scores = centrality_scores(sA, centrality)

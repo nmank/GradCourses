@@ -1,16 +1,17 @@
 import numpy as np
-from sklearn import datasets, linear_model
+# from sklearn import datasets, linear_model
+from sklearn import linear_model
 import scipy.cluster.hierarchy as sch
-import scipy.spatial.distance as ssd
-import sklearn
-from numpy import genfromtxt
-import sklearn.metrics as sk 
-import matplotlib
+# import scipy.spatial.distance as ssd
+# import sklearn
+# from numpy import genfromtxt
+# import sklearn.metrics as sk 
+# import matplotlib
 # include this for katrina
 # matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import pylab
-from scipy.sparse import linalg 
+# from scipy.sparse import linalg 
 
 
 '''
@@ -48,11 +49,11 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
     outputs: adjacency matrix
                     represents a directed weighted graph of the data (dimensions m x m)
     '''
-    n,m = X.shape;
+    n,m = X.shape
 
     if msr == 'correlation':
         norms = np.repeat(np.expand_dims(np.linalg.norm(X, axis=0),axis= 0), n, axis=0)
-        norms[np.where(norms)==0] = 1 #so we don't divide by 0s
+        norms[np.where(norms==0)] = 1 #so we don't divide by 0s
         normalized_X = X/norms
         AdjacencyMatrix = normalized_X.T @ normalized_X - np.eye(m)
         if not negative:
@@ -350,7 +351,7 @@ def displaygraph(A,node_sizes,labels = False,layout = 'shell', plt_name = 'new_g
     outputs: plots the graph (no return values)
     '''
     #will not display individual nodes (yet) :)
-    graph = [];
+    graph = []
     it = np.arange(A[:,1].size)
     for i in it:
         for j in it:

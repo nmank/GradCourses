@@ -42,13 +42,13 @@ def make_dendrogram(t, epsilon, h_k_p, distance, ccd, filename, title):
 		print('network disconnected')
 		return
 
-	n,m = Data.shape;
+	n,m = Data.shape
 
-	clst_adj = [];
-	nodes = np.zeros((1,m));
-	nodes[0,:] = np.arange(0,m);
-	clst_node = [];
-	all_clusters_node = [];
+	clst_adj = []
+	nodes = np.zeros((1,m))
+	nodes[0,:] = np.arange(0,m)
+	clst_node = []
+	all_clusters_node = []
 
 	gt.cluster_laplace(A, clst_adj, nodes, 1, clst_node, all_clusters_node)
 

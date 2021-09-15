@@ -528,7 +528,8 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
             A
                 adjacency matrix
             clst_dst
-                the distance between clusters (default dumb) eventually implement others
+                the string for the distance between clusters (default dumb) eventually implement others
+                options are 'dumb' or 'ced'
     outputs: (np.array) linkage matrix
     '''
     m = A.shape[0]
@@ -656,7 +657,6 @@ def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generat
     if just_dendrogram:
         fig = pylab.figure(figsize=(8,8))
         Z_den = sch.dendrogram(Z)
-        plt.xlabel('Node Number')
     
     else:
         fig = pylab.figure(figsize=(8,8))

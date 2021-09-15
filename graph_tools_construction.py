@@ -62,9 +62,14 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
 
 
     elif msr == 'heatkernel':
-        Diffs = np.repeat(np.expand_dims(X,axis = 1), m, axis=1)-np.repeat(np.expand_dims(X,axis = 2), m, axis=2)
-        DistanceMatrix = np.linalg.norm(Diffs, axis= 0)
-        AdjacencyMatrix = np.exp(-(DistanceMatrix ** 2 /(h_k_param ** 2)))
+        # Diffs = np.repeat(np.expand_dims(X,axis = 1), m, axis=1)-np.repeat(np.expand_dims(X,axis = 2), m, axis=2)
+        # DistanceMatrix = np.linalg.norm(Diffs, axis= 0)
+        # AdjacencyMatrix = np.exp(-(DistanceMatrix ** 2 /(h_k_param ** 2)))
+        AdjacencyMatrix = np.zeros((m,m))
+        for i in range(m):
+            for j in range(i+1,m):
+                AdjacencyMatrix[i,j] = np.exp(-((X[:,i] - X[:,j]).T @ (X[:,i] - X[:,j]) /(2*h_k_param)))
+                AdjacencyMatrix[j,i] = AdjacencyMatrix[i,j].copy()
 
     elif msr == 'parcor':
         # create linear regression object 
@@ -109,12 +114,15 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
                         PC = 1
 
 
-                    AdjacencyMatrix[i,j] =PC;
-                    AdjacencyMatrix[j,i] =PC;
-                    vis = list(range(m));
+                    AdjacencyMatrix[i,j] =PC
+                    AdjacencyMatrix[j,i] =PC
+                    vis = list(range(m))
 
     if epsilon > 0:
         AdjacencyMatrix[AdjacencyMatrix < epsilon] = 0
+
+    #force diagonal 0
+    np.fill_diagonal(AdjacencyMatrix, 0)
 
     return AdjacencyMatrix
 

@@ -16,13 +16,13 @@ import pylab
 
 '''
 To Do:
+    -normalized cut
     -speed up eval calculation
     -partial correlation???
     -mutual information score for adjacency matrix
     -other norms in heat kernel
     -dynamic cut
     -subspace distances
-    -comment supra adjacency and centrality algorithms
     -sanity check Z dimensions in linkage matrix
 '''
 
@@ -529,7 +529,9 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
                 adjacency matrix
             clst_dst
                 the string for the distance between clusters (default dumb) eventually implement others
-                options are 'dumb' or 'ced'
+                options are 'dumb' or 'avg_cut' or 'norm_cut'
+                'avg_cut' based off average cut problem but with a distance matrix. this results in a poorly structured dendrogram
+                'norm_cut' is unfinished
     outputs: (np.array) linkage matrix
     '''
     m = A.shape[0]
@@ -592,7 +594,7 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
         Z[:,2] = Z[:,3].copy()
     
     #average cut size
-    elif clst_dst == 'ced':
+    elif clst_dst == 'avg_cut':
         Dist = sim2dist(A)
         for ii in range(m-1):
             jj = m + ii
@@ -604,8 +606,12 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
             dist = 0
             for nodeA in cl1:
                 for nodeB in cl2:
-                    dist+= Dist[nodeA,nodeB]
-            Z[ii,2] = dist/sz1 + dist/sz2  
+                    dist += Dist[nodeA,nodeB]
+            Z[ii,2] = dist/sz1 + dist/sz2 
+
+    #normalized cut size
+    elif clst_dst == 'norm_cut':
+        print('in construction') 
     else:
         print('clst_dst not recognized')
 

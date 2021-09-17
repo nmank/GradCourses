@@ -28,7 +28,7 @@ To Do:
 
 
 
-def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = False, weighted = True):
+def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = False, h_k_ord = 2):
     '''
     A function that builds an adjacecny matrix out of data using two methods
 
@@ -65,10 +65,12 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
         # Diffs = np.repeat(np.expand_dims(X,axis = 1), m, axis=1)-np.repeat(np.expand_dims(X,axis = 2), m, axis=2)
         # DistanceMatrix = np.linalg.norm(Diffs, axis= 0)
         # AdjacencyMatrix = np.exp(-(DistanceMatrix ** 2 /(h_k_param ** 2)))
+
         AdjacencyMatrix = np.zeros((m,m))
+
         for i in range(m):
             for j in range(i+1,m):
-                AdjacencyMatrix[i,j] = np.exp(-((X[:,i] - X[:,j]).T @ (X[:,i] - X[:,j]) /(2*h_k_param)))
+                AdjacencyMatrix[i,j] = np.exp(-(np.linalg.norm(X[:,i], X[:,j], ord = h_k_ord)**2 )/(2*h_k_param)))
                 AdjacencyMatrix[j,i] = AdjacencyMatrix[i,j].copy()
 
     elif msr == 'parcor':

@@ -70,7 +70,7 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
 
         for i in range(m):
             for j in range(i+1,m):
-                AdjacencyMatrix[i,j] = np.exp(-(np.linalg.norm(X[:,i], X[:,j], ord = h_k_ord)**2 )/(2*h_k_param))
+                AdjacencyMatrix[i,j] = np.exp(-(np.linalg.norm( X[:,i]-X[:,j], ord = h_k_ord)**2 )/(2*h_k_param))
                 AdjacencyMatrix[j,i] = AdjacencyMatrix[i,j].copy()
 
     elif msr == 'parcor':

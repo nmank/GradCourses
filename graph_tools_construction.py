@@ -70,21 +70,21 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
 
         for i in range(m):
             for j in range(i+1,m):
-                AdjacencyMatrix[i,j] = np.exp(-(np.linalg.norm(X[:,i], X[:,j], ord = h_k_ord)**2 )/(2*h_k_param)))
+                AdjacencyMatrix[i,j] = np.exp(-(np.linalg.norm(X[:,i], X[:,j], ord = h_k_ord)**2 )/(2*h_k_param))
                 AdjacencyMatrix[j,i] = AdjacencyMatrix[i,j].copy()
 
     elif msr == 'parcor':
         # create linear regression object 
-        reg = linear_model.LinearRegression();
+        reg = linear_model.LinearRegression()
 
-        vis = list(range(m));
+        vis = list(range(m))
 
         for i in range(m):
             for j in range(m):
                 if i > j:
 
                     #compute projections (aka linear regressions)
-                    vis.remove(i);
+                    vis.remove(i)
                     vis.remove(j);					
                     reg.fit(X[:,vis], X[:,i]); 
                     x_hat_i = reg.predict(X[:,vis]);

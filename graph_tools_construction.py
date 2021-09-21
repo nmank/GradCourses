@@ -16,14 +16,13 @@ import pylab
 
 '''
 To Do:
-    -normalized cut
+    -normalized cut for linkage matrix
     -speed up eval calculation
     -partial correlation???
     -mutual information score for adjacency matrix
-    -other norms in heat kernel
     -dynamic cut
     -subspace distances
-    -sanity check Z dimensions in linkage matrix
+    -read and comment cluster centers code
 '''
 
 
@@ -751,6 +750,7 @@ def centrality_scores(A, centrality = 'large_evec'):
                      options are:
                          'largest_evec'
                          'page_rank'
+                         'degree'
     Outputs:
         scores - a numpy array of the centrality scores for the nodes in the network
                  index in scores corresponds to index in A
@@ -760,6 +760,9 @@ def centrality_scores(A, centrality = 'large_evec'):
     if centrality == 'large_evec':
         W,V = np.linalg.eig(A)
         scores = np.real(V[:,W.argmax()])
+
+    if centrality == 'degree':
+        scores = np.sum(A,axis = 1)
         
     elif centrality == 'page_rank':
         n = A.shape[0]
@@ -818,7 +821,12 @@ def supra_adjacency_scores(sA, centrality, n_times, n_nodes):
     return scores1
 
 
-
+'''
+Comment this
+'''
+def pathway_centrality(A, centrality, pathway_idx):
+    scores = centrality_scores(A, centrality)
+    return np.sum(scores[pathway_idx])
 
 
 

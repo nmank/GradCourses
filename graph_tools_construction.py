@@ -17,6 +17,7 @@ import pylab
 
 '''
 To Do:
+    -plotting with weights is weird in displaygraph
     -normalized cut for linkage matrix
     -speed up eval calculation
     -partial correlation???
@@ -404,7 +405,8 @@ def displaygraph(small_A,node_sizes,labels = False,layout = 'shell', plt_name = 
         nx.draw(G, pos, node_size = node_sizes)
         nx.draw_networkx_labels(G, pos)
     else:
-        nx.draw(G, pos, node_size = node_sizes, width=weights)
+        # nx.draw(G, pos, node_size = node_sizes, width=weights)
+        nx.draw(G, pos)
 
     # show graph
     #plt.show()
@@ -426,7 +428,7 @@ def connected_components(A):
     incident_edges = np.sum(A,axis = 1)
     #degree matrix
     D = np.diag(incident_edges)*np.eye(m)
-    L = (D-A);
+    L = (D-A)
 
     #generate eigenvalues and eigenvectors
     # if L.size > 20:
@@ -617,7 +619,7 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
             for nodeA in cl1:
                 for nodeB in cl2:
                     dist += Dist[nodeA,nodeB]
-            Z[ii,2] = dist/sz1 + dist/sz2 
+            Z[ii,2] = (dist/sz1 + dist/sz2)
 
     #normalized cut size
     elif clst_dst == 'norm_cut':
@@ -770,9 +772,10 @@ def centrality_scores(A, centrality = 'large_evec'):
         W,V = np.linalg.eig(A)
         scores = np.real(V[:,W.argmax()])
 
-    if centrality == 'degree':
-        degrees = np.sum(A,axis = 1)
-        scores = np.sum(A,axis = 1)/np.max(degrees)
+    elif centrality == 'degree':
+        #sum by out edges
+        degrees = np.sum(A,axis = 0)
+        scores = degrees/np.max(degrees)
         
     elif centrality == 'page_rank':
         n = A.shape[0]

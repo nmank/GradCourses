@@ -2,6 +2,7 @@ import numpy as np
 # from sklearn import datasets, linear_model
 from sklearn import linear_model
 import scipy.cluster.hierarchy as sch
+import networkx as nx
 # import scipy.spatial.distance as ssd
 # import sklearn
 # from numpy import genfromtxt
@@ -186,6 +187,9 @@ def wgcna(x, beta = 1, den_gen = 'average', threshold = 0, den_fname = 'wgcna_de
     return sd, Z
 
 def cluster_den(Z,x,cut_height = .7):
+    '''
+    Also for WGCNA
+    '''
     m,n = x.shape
     cluster_ind_ar = sp.cluster.hierarchy.cut_tree(Z, height = cut_height)
     cluster_ind_ls = list(map(int, cluster_ind_ar))
@@ -217,6 +221,9 @@ def cluster_den(Z,x,cut_height = .7):
     return clusters, eigengenes
 
 def random_graph(n):
+    '''
+    Generate an adjacency matrix of a random graph with n nodes.
+    '''
     A = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
@@ -345,7 +352,7 @@ def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_no
 
 
 
-def displaygraph(A,node_sizes,labels = False,layout = 'shell', plt_name = 'new_graph.png'):
+def displaygraph(small_A,node_sizes,labels = False,layout = 'shell', plt_name = 'new_graph.png'):
     '''
     A function that plots the graph
 
@@ -359,12 +366,12 @@ def displaygraph(A,node_sizes,labels = False,layout = 'shell', plt_name = 'new_g
                     spring- plots graph so we have the smallest number of crossing edges
     outputs: plots the graph (no return values)
     '''
-    #will not display individual nodes (yet) :)
+
     graph = []
-    it = np.arange(A[:,1].size)
+    it = np.arange(small_A[:,1].size)
     for i in it:
         for j in it:
-            if  i > j and A[i,j] !=0:
+            if  i > j and small_A[i,j] !=0:
                 graph.append((i,j))
 
     # extract nodes from graph
@@ -378,8 +385,10 @@ def displaygraph(A,node_sizes,labels = False,layout = 'shell', plt_name = 'new_g
         G.add_node(node)
 
     # add edges
+    weights = []
     for edge in graph:
-        G.add_edge(edge[0], edge[1])
+        weights.append(small_A[edge[0],edge[1]]*3)
+        G.add_edge(edge[0], edge[1], weight = weights[-1])
 
     # draw graph
     if layout =='shell':
@@ -395,7 +404,7 @@ def displaygraph(A,node_sizes,labels = False,layout = 'shell', plt_name = 'new_g
         nx.draw(G, pos, node_size = node_sizes)
         nx.draw_networkx_labels(G, pos)
     else:
-        nx.draw(G, pos, node_size = node_sizes)
+        nx.draw(G, pos, node_size = node_sizes, width=weights)
 
     # show graph
     #plt.show()
@@ -663,12 +672,12 @@ def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generat
     
     if just_dendrogram:
         fig = pylab.figure(figsize=(8,8))
-        Z_den = sch.dendrogram(Z)
+        Z_den = sch.dendrogram(Z, color_threshold=0)
     
     else:
         fig = pylab.figure(figsize=(8,8))
         ax1 = fig.add_axes([0.07,0.03,0.26,0.88])
-        Z_den = sch.dendrogram(Z,orientation='left')
+        Z_den = sch.dendrogram(Z,orientation='left', color_threshold =0)
     #     ax1.set_xticks([])
         ax1.set_yticks([])
 
@@ -762,7 +771,8 @@ def centrality_scores(A, centrality = 'large_evec'):
         scores = np.real(V[:,W.argmax()])
 
     if centrality == 'degree':
-        scores = np.sum(A,axis = 1)
+        degrees = np.sum(A,axis = 1)
+        scores = np.sum(A,axis = 1)/np.max(degrees)
         
     elif centrality == 'page_rank':
         n = A.shape[0]

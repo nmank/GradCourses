@@ -86,13 +86,13 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
                     vis.remove(i)
                     vis.remove(j);					
                     reg.fit(X[:,vis], X[:,i]); 
-                    x_hat_i = reg.predict(X[:,vis]);
-                    reg.fit(X[:,vis], X[:,j]);
-                    x_hat_j = reg.predict(X[:,vis]);
+                    x_hat_i = reg.predict(X[:,vis])
+                    reg.fit(X[:,vis], X[:,j])
+                    x_hat_j = reg.predict(X[:,vis])
 
                     #compute residuals
-                    Y_i = X[:,i] - x_hat_i;
-                    Y_j = X[:,j] - x_hat_j;
+                    Y_i = X[:,i] - x_hat_i
+                    Y_j = X[:,j] - x_hat_j
 
                     Y_in = np.linalg.norm(Y_i)
                     Y_jn = np.linalg.norm(Y_j)
@@ -819,16 +819,6 @@ def supra_adjacency_scores(sA, centrality, n_times, n_nodes):
             scores1[i] += np.abs(scores[i+n_nodes*j])
             
     return scores1
-
-
-'''
-Comment this
-'''
-def pathway_centrality(A, centrality, pathway_idx):
-    scores = centrality_scores(A, centrality)
-    return np.sum(scores[pathway_idx])
-
-
 
 
 

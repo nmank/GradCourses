@@ -24,7 +24,6 @@ To Do:
     -mutual information score for adjacency matrix
     -dynamic cut
     -subspace distances
-    -read and comment cluster centers code
 '''
 
 
@@ -353,18 +352,21 @@ def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_no
 
 
 
-def displaygraph(small_A,node_sizes,labels = False,layout = 'shell', plt_name = 'new_graph.png'):
+def displaygraph(small_A,node_sizes,labels = {},layout = 'shell', plt_name = 'new_graph.png'):
     '''
     A function that plots the graph
 
-    inputs: 1) adjacency matrix
-                    represents a directed weighted graph of the data
+    inputs: 1) small_A
+                    an adjacency matrix that represents a directed weighted graph of the data
              2) labels
+                    dictionary with node numbers as keys and strings for node labels
              3) layout
                     shell- plots the graph in a circle, only plots largest connected component
                     circular- plots the graph in a circle, only plots largest connected component
                     spectral- plots the graph using two eigenvectors of laplacian as coordinates
                     spring- plots graph so we have the smallest number of crossing edges
+             4) plt_name
+                    a string for the filename and location of saved graph as png
     outputs: plots the graph (no return values)
     '''
 
@@ -401,9 +403,9 @@ def displaygraph(small_A,node_sizes,labels = False,layout = 'shell', plt_name = 
     elif layout == 'spectral':
         pos = nx.spectral_layout(G)
 
-    if labels == True:
+    if len(labels) > 0:
         nx.draw(G, pos, node_size = node_sizes)
-        nx.draw_networkx_labels(G, pos)
+        nx.draw_networkx_labels(G, pos, labels)
     else:
         # nx.draw(G, pos, node_size = node_sizes, width=weights)
         nx.draw(G, pos)
@@ -468,16 +470,18 @@ def plot_spectrum(A, lbl = 'line'):
 
 
 
-def cluster_centers(A, clst_adj, clst_node):
+def cluster_centers(A, clst_adj, clst_node, centrality = 'degree'):
     '''
     A function that finds the center of each cluster using degree centrality
 
-    inputs: 1) adjacency matrix
-                    represents a directed weighted graph of the data
-             2) clst_adj
+    inputs: 1) A
+                    adjacency matrix represents a directed weighted graph of the data
+            2) clst_adj
                     a list of the adjacency matrices of each cluster
-             5) clst_node
+            3) clst_node
                     a list of the nodes in each cluster
+            4) centrality
+                    a string for the centrality measure to use
     outputs:1) newA
                     the new center adjacancy matrix
              2) newN
@@ -488,19 +492,23 @@ def cluster_centers(A, clst_adj, clst_node):
     newN= np.zeros(nAsz)
     newA = np.zeros((nAsz,nAsz))
 
-    #count the weighted degree of each node in each cluster
+    # #count the weighted degree of each node in each cluster
+    # for ii in range(nAsz):
+    #     Aclass = clst_adj[ii]
+    #     Nclass = clst_node[ii]
+    #     Asz = clst_node[ii].size
+    #     score = np.zeros(Asz)
+    #     for i in range(Asz):
+    #         for j in range(Asz):
+    #             if j != i:
+    #                 score[i] += Aclass[i,j]
+
+    #calculate centrality score of each node in each cluster
     for ii in range(nAsz):
-        Aclass = clst_adj[ii]
-        Nclass = clst_node[ii]
-        Asz = clst_node[ii].size
-        score = np.zeros(Asz)
-        for i in range(Asz):
-            for j in range(Asz):
-                if j != i:
-                    score[i] += Aclass[i,j]
+        score = centrality_scores(clst_adj[ii], centrality)    
 
         #store the winning node in the ii-th cluster
-        newN[ii] = Nclass[0,np.argmax(score)]
+        newN[ii] = clst_node[ii][np.argmax(score)]
 
     newN.sort()
 
@@ -542,8 +550,8 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
             clst_dst
                 the string for the distance between clusters (default dumb) eventually implement others
                 options are 'dumb' or 'avg_cut' or 'norm_cut'
-                'avg_cut' based off average cut problem but with a distance matrix. this results in a poorly structured dendrogram
-                'norm_cut' is unfinished
+                    'avg_cut' based off average cut problem but with a distance matrix. this results in a poorly structured dendrogram
+                    'norm_cut' is unfinished
     outputs: (np.array) linkage matrix
     '''
     m = A.shape[0]
@@ -653,7 +661,7 @@ def cut_tree(Z, n_clusters = None, height = None):
               
               
              
-def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generated_dendrogram.png', title='Dendrogram', just_dendrogram = False):
+def plot_dendrogram(all_clusters_node, A, X = None, clst_dst = 'dumb', fname = 'generated_dendrogram.png', title='Dendrogram', just_dendrogram = False):
 
     '''
     A function that generates a dendrogram

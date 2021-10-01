@@ -651,17 +651,29 @@ def cut_tree(Z, n_clusters = None, height = None):
               
               
              
-def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generated_dendrogram.png', title='Dendrogram', just_dendrogram = False):
+def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generated_dendrogram.png', title='Dendrogram', just_dendrogram = False, split = 0):
 
     '''
     A function that generates a dendrogram
 
-    inputs: node clusters
-                generally the output of cluster laplace
+    inputs: all_clusters_node
+                a list of indices for the node clustering
             A
-                adjacency matrix
+                a numpy array of the adjacency matrix
+            X
+                a numpy array of the dataset, rows correspond to entries in A
             clst_dst
-                the distance between clusters (default dumb) eventually implement others
+                the distance between clusters (default dumb)
+            fname
+                a string for the file path to save the plot
+            title
+                a string for the plot title
+            just_dendrogram
+                boolean, False for adding heatmap and horizontally oriented dendrogram
+            split
+                an integer, a horizontal line will be drawn between the split-1 and 
+                split indexed pixels. this is useful for distinguishing between two 
+                different classes in the node features
     outputs: (none) plots the dendrogram
             Saves said plot in the current directory as generated_dendrogram.png
     '''
@@ -686,6 +698,8 @@ def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generat
         idx1 = Z_den['leaves']
         X = X[:,idx1].T
         im = axmatrix.matshow(X, aspect='auto', origin='lower', cmap=pylab.cm.YlGnBu)
+        if split > 0:
+            axmatrix.axvline(split -.5, color = 'white')
         cbar = fig.colorbar(im)
         axmatrix.set_xticks([])
         axmatrix.set_yticks([])

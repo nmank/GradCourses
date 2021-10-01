@@ -661,11 +661,7 @@ def cut_tree(Z, n_clusters = None, height = None):
               
               
              
-<<<<<<< HEAD
 def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generated_dendrogram.png', title='Dendrogram', just_dendrogram = False, split = 0):
-=======
-def plot_dendrogram(all_clusters_node, A, X = None, clst_dst = 'dumb', fname = 'generated_dendrogram.png', title='Dendrogram', just_dendrogram = False):
->>>>>>> 817a2f69bb36f66a118797ecd1456c984fee8f7a
 
     '''
     A function that generates a dendrogram

@@ -368,7 +368,7 @@ def embedgraph(A):
     _, evecs = np.linalg.eigh(L)
 
     plt.figure()
-    plt.scatter(evecs[:,2], evecs[:,3])
+    plt.scatter(evecs[:,1], evecs[:,2], marker = 'x')
     plt.xlabel('Second Smallest Eigenvector')
     plt.ylabel('Third Smallest Eigenvector')
     plt.savefig('graph_embedding.png')
@@ -431,7 +431,7 @@ def displaygraph(small_A,node_sizes,labels = {},layout = 'shell', plt_name = 'ne
         nx.draw_networkx_labels(G, pos, labels)
     else:
         # nx.draw(G, pos, node_size = node_sizes, width=weights)
-        nx.draw(G, pos)
+        nx.draw(G, pos, node_size = node_sizes)
 
     # show graph
     #plt.show()

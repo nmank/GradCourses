@@ -350,6 +350,29 @@ def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_no
         cluster_laplace(A2, clst_adj, nodes2, min_clust_sz, clst_node, all_clusters_node)
 
 
+def embedgraph(A):
+    '''
+    Embedding using second and third smallest eigenvectors of the graph laplacian.
+
+    Inputs:
+        Numpy array of adjacency matrix
+    '''
+    m = A.shape[0]
+    
+    incident_edges = np.sum(A,axis = 1)
+    #degree matrix
+    D = np.diag(incident_edges)*np.eye(m)
+
+    L = D-A
+
+    _, evecs = np.linalg.eigh(L)
+
+    plt.figure()
+    plt.scatter(evecs[:,2], evecs[:,3])
+    plt.xlabel('Second Smallest Eigenvector')
+    plt.ylabel('Third Smallest Eigenvector')
+    plt.savefig('graph_embedding.png')
+
 
 
 def displaygraph(small_A,node_sizes,labels = {},layout = 'shell', plt_name = 'new_graph.png'):

@@ -820,27 +820,33 @@ def centrality_scores(A, centrality = 'large_evec'):
     elif centrality == 'degree':
         #sum by out edges
         degrees = np.sum(A,axis = 0)
-        scores = degrees/np.max(degrees)
+        if A.shape[0] > 1:
+            scores = degrees/np.max(degrees)
+        else:
+            scores = np.array([1])
         
     elif centrality == 'page_rank':
         n = A.shape[0]
-        M = np.zeros((n,n))
-        for i in range(n): 
-            M[:,i] = A[:,i]/np.sum(A[:,i])
+        if n > 1:
+            scores = degrees/np.max(degrees)
+        else:
+            M = np.zeros((n,n))
+            for i in range(n): 
+                M[:,i] = A[:,i]/np.sum(A[:,i])
 
-        #taken from da wikipedia
-        eps = 0.001
-        d = 0.85
+            #taken from da wikipedia
+            eps = 0.001
+            d = 0.85
 
-        v = np.random.rand(n, 1)
-        v = v / np.linalg.norm(v, 1)
-        last_v = np.ones((n, 1), dtype=np.float32) * 100
-        M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
+            v = np.random.rand(n, 1)
+            v = v / np.linalg.norm(v, 1)
+            last_v = np.ones((n, 1), dtype=np.float32) * 100
+            M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
 
-        while np.linalg.norm(v - last_v, 2) > eps:
-            last_v = v
-            v = np.matmul(M_hat, v)
-        scores = v
+            while np.linalg.norm(v - last_v, 2) > eps:
+                last_v = v
+                v = np.matmul(M_hat, v)
+            scores = v
         
     else:
         print('centrality type not recognized')

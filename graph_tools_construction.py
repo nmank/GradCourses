@@ -741,6 +741,8 @@ def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generat
 
     pylab.savefig(fname)
     
+    return Z_den
+    
 
     
     

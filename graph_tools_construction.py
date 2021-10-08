@@ -801,6 +801,10 @@ def supra_adjacency(dataset, time_weight = 'mean', msr = 'parcor', epsilon = 0, 
 def centrality_scores(A, centrality = 'large_evec'):
     '''
     A method for computing the centrality of the nodes in a network
+
+    Note: a node has degree 5 if it has 5 edges coming out of it. 
+    We are interested in out edges rather than in edges! 
+    Page rank ranks nodes with out edges higher than nodes with in-edges.
     
     Inputs:
         A - a numpy array that is the adjacency matrix
@@ -822,27 +826,38 @@ def centrality_scores(A, centrality = 'large_evec'):
     elif centrality == 'degree':
         #sum by out edges
         degrees = np.sum(A,axis = 0)
-        scores = degrees/np.max(degrees)
+        if A.shape[0] > 1:
+            scores = degrees/np.max(degrees)
+        else:
+            scores = np.array([1])
         
     elif centrality == 'page_rank':
+        A = A.T
         n = A.shape[0]
-        M = np.zeros((n,n))
-        for i in range(n): 
-            M[:,i] = A[:,i]/np.sum(A[:,i])
+        if n == 1:
+            scores = np.array([1])
+        else:
+            M = np.zeros((n,n))
+            for i in range(n): 
+                A_sum = np.sum(A[:,i])
+                if A_sum == 0:
+                    M[:,i] = A[:,i]
+                else:
+                    M[:,i] = A[:,i]/A_sum
 
-        #taken from da wikipedia
-        eps = 0.001
-        d = 0.85
+            #taken from da wikipedia
+            eps = 0.001
+            d = 0.85
 
-        v = np.random.rand(n, 1)
-        v = v / np.linalg.norm(v, 1)
-        last_v = np.ones((n, 1), dtype=np.float32) * 100
-        M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
+            v = np.random.rand(n, 1)
+            v = v / np.linalg.norm(v, 1)
+            last_v = np.ones((n, 1), dtype=np.float32) * 100
+            M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
 
-        while np.linalg.norm(v - last_v, 2) > eps:
-            last_v = v
-            v = np.matmul(M_hat, v)
-        scores = v
+            while np.linalg.norm(v - last_v, 2) > eps:
+                last_v = v
+                v = np.matmul(M_hat, v)
+            scores = v
         
     else:
         print('centrality type not recognized')

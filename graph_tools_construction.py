@@ -801,6 +801,10 @@ def supra_adjacency(dataset, time_weight = 'mean', msr = 'parcor', epsilon = 0, 
 def centrality_scores(A, centrality = 'large_evec'):
     '''
     A method for computing the centrality of the nodes in a network
+
+    Note: a node has degree 5 if it has 5 edges coming out of it. 
+    We are interested in out edges rather than in edges! 
+    Page rank ranks nodes with out edges higher than nodes with in-edges.
     
     Inputs:
         A - a numpy array that is the adjacency matrix
@@ -828,13 +832,18 @@ def centrality_scores(A, centrality = 'large_evec'):
             scores = np.array([1])
         
     elif centrality == 'page_rank':
+        A = A.T
         n = A.shape[0]
-        if n > 1:
-            scores = degrees/np.max(degrees)
+        if n == 1:
+            scores = np.array([1])
         else:
             M = np.zeros((n,n))
             for i in range(n): 
-                M[:,i] = A[:,i]/np.sum(A[:,i])
+                A_sum = np.sum(A[:,i])
+                if A_sum == 0:
+                    M[:,i] = A[:,i]
+                else:
+                    M[:,i] = A[:,i]/A_sum
 
             #taken from da wikipedia
             eps = 0.001

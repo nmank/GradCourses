@@ -2,7 +2,7 @@ import pandas
 import numpy as np
 from ast import literal_eval
 from matplotlib import pyplot as plt
-from NetworkDataAnalysis import graph_tools_construction as gt
+import graph_tools_construction as gt
 
 #load the data
 
@@ -69,6 +69,14 @@ def calc_pathway_scores(centrality_measure, undirected, pid_2_eid, pathway_edges
         #node eids as strings
         string_node_eids = [str(int(node)) for node in n_eids]
 
+
+        ###########################
+        #ToDo
+        #write a helper function that does this conversion outside of this function that gives consistent indexing
+        #import featureset with index
+        #rename index based on pid to eid dictionary
+        #comment functions
+
         #get featureset eids
         featureset_pids = list(featureset['Unnamed: 0'])
 
@@ -77,6 +85,9 @@ def calc_pathway_scores(centrality_measure, undirected, pid_2_eid, pathway_edges
         for p in featureset_pids:
             if p in list(pid_2_eid['ProbeID']):
                 featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
+
+
+        ############################
 
         #find the featureset nodes in the pathway
         discriminatory_nodes = list(set(featureset_eids).intersection(set(string_node_eids)))
@@ -121,6 +132,7 @@ def calc_pathway_scores(centrality_measure, undirected, pid_2_eid, pathway_edges
     plt.ylabel('Centrality Score')
 
     pathway_scores = pathway_scores.sort_values(by = 'unnormalized', ascending=False).dropna()
+    #change location of saved csvs to be parameter
     if undirected:
         pathway_scores.to_csv('/data4/mankovic/GSE73072/network_centrality/undirected/gse73072_undirected_'+centrality_measure+'_pval_and_lfc.csv', index = False)
     else:

@@ -731,8 +731,8 @@ def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generat
         idx1 = Z_den['leaves']
         X = X[:,idx1].T
         im = axmatrix.matshow(X, aspect='auto', origin='lower', cmap=pylab.cm.YlGnBu)
-        if split > 0:
-            axmatrix.axvline(split -.5, color = 'white')
+        # if split > 0:
+        #     axmatrix.axvline(split -.5, color = 'white')
         cbar = fig.colorbar(im)
         axmatrix.set_xticks([])
         axmatrix.set_yticks([])

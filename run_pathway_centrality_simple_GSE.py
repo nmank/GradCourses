@@ -1,19 +1,8 @@
 import pandas
 import numpy as np
-from ast import literal_eval
 from matplotlib import pyplot as plt
 import graph_tools_construction as gt
 
-#load the data
-
-# metadata = pandas.read_csv('/data4/kehoe/GSE73072/GSE73072_metadata.csv')
-# vardata = pandas.read_csv('/data4/kehoe/GSE73072/GSE73072_vardata.csv')
-
-pathway_edges = pandas.read_csv('/data3/darpa/omics_databases/ensembl2pathway/reactome_human_pathway_edges.csv').dropna()
-
-featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/diffgenes_gse73072_pval_and_lfc.csv')
-
-pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
 
 
 
@@ -23,8 +12,15 @@ def make_network(pathway_name, all_edge_dataframe, undirected):
     Make a network from the known edges.
 
     Inputs:
-        pathway_name: a string for the name of a pathway
-        all_edge_dataframe: a dataframe with all the edges
+        pathway_name: a string for the name of a pathway, corresponds to 'pathway_id' in all_edge_dataframe
+        all_edge_dataframe: a dataframe with network data. The columns are:
+                            'pathway_id': identifier of the pathway
+                            'src': source node identifier
+                            'dest': destination node identifier
+                            'weight': the edge weight
+                            'direction': 'undirected' for undirected edge
+        undirected: a boolean, True for undirected and False for directed
+
     
     Outputs:
         A: a numpy array of the adjacency matrix (directed)
@@ -35,6 +31,9 @@ def make_network(pathway_name, all_edge_dataframe, undirected):
 
     node_eids = np.array(list(set(edge_dataframe['src']).union(set(edge_dataframe['dest']))))
 
+    if 'weight' in list(edge_dataframe.columns):
+         weighted = True
+
     n_nodes = len(node_eids)
 
     A = np.zeros((n_nodes, n_nodes))
@@ -42,14 +41,19 @@ def make_network(pathway_name, all_edge_dataframe, undirected):
     for _,row in edge_dataframe.iterrows():
         i = np.where(node_eids == row['src'])[0][0]
         j = np.where(node_eids == row['dest'])[0][0]
-        A[i,j] = 1
-        if undirected or row['direction'] == 'undirected':
-            A[j,i] = A[i,j].copy()
+        if weighted:
+            A[i,j] = row['weight'].item()
+        else:
+            A[i,j] = 1
+            if undirected or row['direction'] == 'undirected':
+                A[j,i] = A[i,j].copy()
     
 
     return A, node_eids
 
-def calc_pathway_scores(centrality_measure, undirected, pid_2_eid, pathway_edges, featureset):
+def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featureset_eids, outfile = 'output.csv'):
+    '''
+    '''
     # load names of the pathways and init pathway dataframe
     pathway_names = np.unique(np.array(pathway_edges['pathway_id']))
 
@@ -68,26 +72,6 @@ def calc_pathway_scores(centrality_measure, undirected, pid_2_eid, pathway_edges
 
         #node eids as strings
         string_node_eids = [str(int(node)) for node in n_eids]
-
-
-        ###########################
-        #ToDo
-        #write a helper function that does this conversion outside of this function that gives consistent indexing
-        #import featureset with index
-        #rename index based on pid to eid dictionary
-        #comment functions
-
-        #get featureset eids
-        featureset_pids = list(featureset['Unnamed: 0'])
-
-        featureset_eids = []
-        #load eids from the probeids in the featureset
-        for p in featureset_pids:
-            if p in list(pid_2_eid['ProbeID']):
-                featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
-
-
-        ############################
 
         #find the featureset nodes in the pathway
         discriminatory_nodes = list(set(featureset_eids).intersection(set(string_node_eids)))
@@ -132,24 +116,42 @@ def calc_pathway_scores(centrality_measure, undirected, pid_2_eid, pathway_edges
     plt.ylabel('Centrality Score')
 
     pathway_scores = pathway_scores.sort_values(by = 'unnormalized', ascending=False).dropna()
-    #change location of saved csvs to be parameter
-    if undirected:
-        pathway_scores.to_csv('/data4/mankovic/GSE73072/network_centrality/undirected/gse73072_undirected_'+centrality_measure+'_pval_and_lfc.csv', index = False)
-    else:
-            pathway_scores.to_csv('/data4/mankovic/GSE73072/network_centrality/directed/gse73072_directed_'+centrality_measure+'_pval_and_lfc.csv', index = False)
 
+    pathway_scores.to_csv(outfile, index = False)
+
+
+#load the data
+
+# metadata = pandas.read_csv('/data4/kehoe/GSE73072/GSE73072_metadata.csv')
+# vardata = pandas.read_csv('/data4/kehoe/GSE73072/GSE73072_vardata.csv')
+
+pathway_edges = pandas.read_csv('/data3/darpa/omics_databases/ensembl2pathway/reactome_human_pathway_edges.csv').dropna()
+
+featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/diffgenes_gse73072_pval_and_lfc.csv', index_col=0)
+
+pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
+
+#featureset_pids
+featureset_pids = list(featureset.index)
+
+featureset_eids = []
+#load eids from the probeids in the featureset
+for p in featureset_pids:
+    if p in list(pid_2_eid['ProbeID']):
+        featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
 
 print('starting degree directed')
-calc_pathway_scores('degree', False, pid_2_eid, pathway_edges, featureset)
+outfile = '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_directed_degree_pval_and_lfc.csv'
+calc_pathway_scores('degree', False, pid_2_eid, pathway_edges, featureset, outfile)
 
 print('starting page rank directed')
-calc_pathway_scores('page_rank', False, pid_2_eid, pathway_edges, featureset)
+outfile = '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_directed_page_rank_pval_and_lfc.csv'
+calc_pathway_scores('page_rank', False, pid_2_eid, pathway_edges, featureset, outfile)
 
 print('starting degree undirected')
-calc_pathway_scores('degree', True, pid_2_eid, pathway_edges, featureset)
+outfile = '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_undirected_degree_pval_and_lfc.csv'
+calc_pathway_scores('degree', True, pid_2_eid, pathway_edges, featureset, outfile)
 
 print('starting page rank undirected')
-calc_pathway_scores('page_rank', True, pid_2_eid, pathway_edges, featureset)
-
-print('starting evec undirected')
-calc_pathway_scores('large_evec', True, pid_2_eid, pathway_edges, featureset)
+outfile = '/data4/mankovic/GSE73072/network_centrality/undirected/gse73072_directed_page_rank_pval_and_lfc.csv'
+calc_pathway_scores('page_rank', True, pid_2_eid, pathway_edges, featureset, outfile)

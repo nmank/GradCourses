@@ -3,7 +3,7 @@ import pandas
 import numpy as np
 from numpy import ndarray
 from scipy.sparse import csr_matrix
-from scipy import
+from scipy import *
 from matplotlib import pyplot as plt
 import graph_tools_construction as gt
 from sklearn.base import BaseEstimator
@@ -60,7 +60,7 @@ subclass for centrality pathway transition matrix using biological networks or g
 '''
 class CLPE(GLPE):
     '''
-        incidence matrix: numpy array
+        incidence matrix: (numpy array)
                             if netwok_type is precomputed it must have the following columns:
                                 column 0 is the source index which corresponds to row of X
                                 column 1 is the destination index which corresponds to row of X
@@ -74,8 +74,7 @@ class CLPE(GLPE):
     def __init__(self, 
                 centrality_measure: str = None, 
                 network_type: str = None,
-                pathway_names: list = None, 
-                data_ids: nparray = None, 
+                pathway_names: list = None,
                 incidence_matrix: ndarray = None,
                 heat_kernel_param: float = None):
 
@@ -84,16 +83,16 @@ class CLPE(GLPE):
         self.network_type_ = str(network_type)
         self.pathway_names_ = list(pathway_names)
         self.incidence_matrix_ = np.array(incidence_matrix)
-        self.heat_kernel_param_ = float(heat_kernel_param)
-    
+        self.heat_kernel_param_ = float(heat_kernel_param)   
 
     def generate_adjacency_matrix(self, X = None, pathway_name = None):
         
-        if network_type = 'precomputed':
+        if self.network_type_ == 'precomputed':
 
             #get incidence matrix for this pathway
-            edge_idx = np.where(self.incidence_matrix_[:,3] == pathway_name])[0]
+            edge_idx = np.where(self.incidence_matrix_[:,3] == pathway_name)[0]
             pathway_incidence = self.incidence_matrix_[edge_idx,:3]
+            feature_idx = np.unique(pathway_incidence[:,:2])
 
             #features in this pathway
             nodes = np.unique(pathway_incidence[:,:2])
@@ -102,23 +101,23 @@ class CLPE(GLPE):
             A = np.zeros((n_nodes, n_nodes))
 
             for row in pathway_incidence:
-                i = np.where(nodes == row[0])[0][0]
-                j = np.where(nodes == row[1])[0][0]
+                i = np.where(feature_idx == row[0])[0][0]
+                j = np.where(feature_idx == row[1])[0][0]
                 A[i, j] = 1
                 if row[2] == 'undirected':
                     A[j, i] = A[i, j].copy()
         else:
-            #START HERE
             #feature_ids in the pathway
-            idx = self.incidence_matrix_[self.incidence_matrix_['pathway_id'] == pathway_name]['feature_id']
+            idx = np.where(self.incidence_matrix_[:,1] == pathway_name)
+            feature_idx = self.incidence_matrix_[idx,0]
 
             #data matrix for features in one pathway (subjects x features)
-            pathway_data =  X[idx,:].T
+            pathway_data =  X[feature_idx,:].T
 
             #generate adjacency matrix
-            A = gt.adjacency_matrix(pathway_data, network_type, h_k_param = self.heat_kernel_param_)
+            A = gt.adjacency_matrix(pathway_data, self.network_type_, h_k_param = self.heat_kernel_param_)
 
-        return A
+        return A, feature_idx
 
 
 
@@ -136,22 +135,34 @@ class CLPE(GLPE):
 
             use these to generate the pathway transition matrix
         '''
+
+        if self.network_type_ == 'precomputed':
+            feature_names = np.unique(self.incidence_matrix_[:1])
+        else:
+            feature_names = np.unique(self.incidence_matrix_[:2])
+
+        n_features = len(feature_names)
+
         self.pathway_transition_matrix_ = []
 
         #define pathway names
         for pathway_name in self.pathway_names_:
     
             #adjacency matrix
-            generate_adjacency_matrix(X, pathway_name)
+            A, feature_idx = self.generate_adjacency_matrix(X, pathway_name)
 
             #centrality scores
-            scores = gt.centrality_scores(A,centrality_measure)
+            scores = gt.centrality_scores(A, self.centrality_measure_)
 
             #normalize centrality score by l1 norm
             scores = scores/np.sum(scores)
 
+            #add feature scores to row for pathway_transition matrix
+            score_row = np.zeros(n_features)
+            score_row[feature_idx] = scores
+
             #add to pathway_transition_matrix
-            self.pathway_transition_matrix_.append(scores)
+            self.pathway_transition_matrix_.append(score_row)
         
         self.pathway_transition_matrix = np.vstack(self.pathway_transition_matrix)
 
@@ -174,125 +185,125 @@ class CLPE(GLPE):
 
 
 
-def make_network(pathway_name, all_edge_dataframe, undirected):
-    '''
-    Make a network from the known edges.
+# def make_network(pathway_name, all_edge_dataframe, undirected):
+#     '''
+#     Make a network from the known edges.
 
-    Inputs:
-        pathway_name: a string for the name of a pathway
-        all_edge_dataframe: a dataframe with all the edges
+#     Inputs:
+#         pathway_name: a string for the name of a pathway
+#         all_edge_dataframe: a dataframe with all the edges
 
-    Outputs:
-        A: a numpy array of the adjacency matrix (directed)
-        node_eids: a list of EntrezIDs whose indices correspond to the entries of A
-    '''
+#     Outputs:
+#         A: a numpy array of the adjacency matrix (directed)
+#         node_eids: a list of EntrezIDs whose indices correspond to the entries of A
+#     '''
 
-    edge_dataframe = all_edge_dataframe[all_edge_dataframe['pathway_id'] == pathway_name]
+#     edge_dataframe = all_edge_dataframe[all_edge_dataframe['pathway_id'] == pathway_name]
 
-    node_eids = np.array(list(set(edge_dataframe['src']).union(set(edge_dataframe['dest']))))
+#     node_eids = np.array(list(set(edge_dataframe['src']).union(set(edge_dataframe['dest']))))
 
-    n_nodes = len(node_eids)
+#     n_nodes = len(node_eids)
 
-    A = np.zeros((n_nodes, n_nodes))
+#     A = np.zeros((n_nodes, n_nodes))
 
-    for _, row in edge_dataframe.iterrows():
-        i = np.where(node_eids == row['src'])[0][0]
-        j = np.where(node_eids == row['dest'])[0][0]
-        A[i, j] = 1
-        if undirected or row['direction'] == 'undirected':
-            A[j, i] = A[i, j].copy()
+#     for _, row in edge_dataframe.iterrows():
+#         i = np.where(node_eids == row['src'])[0][0]
+#         j = np.where(node_eids == row['dest'])[0][0]
+#         A[i, j] = 1
+#         if undirected or row['direction'] == 'undirected':
+#             A[j, i] = A[i, j].copy()
 
-    return A, node_eids
+#     return A, node_eids
 
-def calc_pathway_scores(centrality_measure, undirected, pid_2_eid, pathway_edges, featureset):
-    # load names of the pathways and init pathway dataframe
-    pathway_names = np.unique(np.array(pathway_edges['pathway_id']))
+# def calc_pathway_scores(centrality_measure, undirected, pid_2_eid, pathway_edges, featureset):
+#     # load names of the pathways and init pathway dataframe
+#     pathway_names = np.unique(np.array(pathway_edges['pathway_id']))
 
-    pathway_scores = pandas.DataFrame(
-        columns=['pathway_id', 'unnormalized', 'path norm', 'feature path norm', 'avg degree norm',
-                 'feature path count'])
+#     pathway_scores = pandas.DataFrame(
+#         columns=['pathway_id', 'unnormalized', 'path norm', 'feature path norm', 'avg degree norm',
+#                  'feature path count'])
 
-    lengths = []
+#     lengths = []
 
-    scores_list = []
+#     scores_list = []
 
-    ii = 0
-    # go through every pathway name
-    for pathway_name in pathway_names:
+#     ii = 0
+#     # go through every pathway name
+#     for pathway_name in pathway_names:
 
-        # make adjacency matrix
-        A, n_eids = make_network(pathway_name, pathway_edges, undirected)
+#         # make adjacency matrix
+#         A, n_eids = make_network(pathway_name, pathway_edges, undirected)
 
-        # node eids as strings
-        string_node_eids = [str(int(node)) for node in n_eids]
+#         # node eids as strings
+#         string_node_eids = [str(int(node)) for node in n_eids]
 
-        ###########################
-        # ToDo
-        # write a helper function that does this conversion outside of this function that gives consistent indexing
-        # import featureset with index
-        # rename index based on pid to eid dictionary
-        # comment functions
+#         ###########################
+#         # ToDo
+#         # write a helper function that does this conversion outside of this function that gives consistent indexing
+#         # import featureset with index
+#         # rename index based on pid to eid dictionary
+#         # comment functions
 
-        # get featureset eids
-        featureset_pids = list(featureset['Unnamed: 0'])
+#         # get featureset eids
+#         featureset_pids = list(featureset['Unnamed: 0'])
 
-        featureset_eids = []
-        # load eids from the probeids in the featureset
-        for p in featureset_pids:
-            if p in list(pid_2_eid['ProbeID']):
-                featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
+#         featureset_eids = []
+#         # load eids from the probeids in the featureset
+#         for p in featureset_pids:
+#             if p in list(pid_2_eid['ProbeID']):
+#                 featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
 
-        ############################
+#         ############################
 
-        # find the featureset nodes in the pathway
-        discriminatory_nodes = list(set(featureset_eids).intersection(set(string_node_eids)))
+#         # find the featureset nodes in the pathway
+#         discriminatory_nodes = list(set(featureset_eids).intersection(set(string_node_eids)))
 
-        # calculate pathway scores
-        scores = gt.centrality_scores(A, centrality_measure)
+#         # calculate pathway scores
+#         scores = gt.centrality_scores(A, centrality_measure)
 
-        # average degree
-        degrees = np.sum(A, axis=0)
-        avg_degree = np.mean(degrees)
+#         # average degree
+#         degrees = np.sum(A, axis=0)
+#         avg_degree = np.mean(degrees)
 
-        # find the indices of the nodes in the adjacency matrix that correspond to nodes in the featureset
-        idx = [string_node_eids.index(r) for r in discriminatory_nodes]
+#         # find the indices of the nodes in the adjacency matrix that correspond to nodes in the featureset
+#         idx = [string_node_eids.index(r) for r in discriminatory_nodes]
 
-        # calculate pathway scores
-        node_scores = scores[idx]
+#         # calculate pathway scores
+#         node_scores = scores[idx]
 
-        if len(node_scores) > 0:
-            pathway_score = np.sum(node_scores)
+#         if len(node_scores) > 0:
+#             pathway_score = np.sum(node_scores)
 
-            # pathway_score = np.sum(node_scores)
+#             # pathway_score = np.sum(node_scores)
 
-            pathway_scores = pathway_scores.append({'pathway_id': pathway_name,
-                                                    'unnormalized': pathway_score,
-                                                    'path norm': pathway_score / len(scores),
-                                                    'feature path norm': pathway_score / len(node_scores),
-                                                    'avg degree norm': pathway_score / avg_degree,
-                                                    'feature path count': len(node_scores)},
-                                                   ignore_index=True)
+#             pathway_scores = pathway_scores.append({'pathway_id': pathway_name,
+#                                                     'unnormalized': pathway_score,
+#                                                     'path norm': pathway_score / len(scores),
+#                                                     'feature path norm': pathway_score / len(node_scores),
+#                                                     'avg degree norm': pathway_score / avg_degree,
+#                                                     'feature path count': len(node_scores)},
+#                                                    ignore_index=True)
 
-            scores_list.append(pathway_score)
-            lengths.append(len(scores))
+#             scores_list.append(pathway_score)
+#             lengths.append(len(scores))
 
-        if ii % 200 == 0:
-            print('pathway ' + str(ii) + ' done')
+#         if ii % 200 == 0:
+#             print('pathway ' + str(ii) + ' done')
 
-        ii += 1
+#         ii += 1
 
-    plt.figure()
-    plt.scatter(lengths, scores_list)
-    plt.xlabel('Pathway Size')
-    plt.ylabel('Centrality Score')
+#     plt.figure()
+#     plt.scatter(lengths, scores_list)
+#     plt.xlabel('Pathway Size')
+#     plt.ylabel('Centrality Score')
 
-    pathway_scores = pathway_scores.sort_values(by='unnormalized', ascending=False).dropna()
-    # change location of saved csvs to be parameter
-    if undirected:
-        pathway_scores.to_csv(
-            '/data4/mankovic/GSE73072/network_centrality/undirected/gse73072_undirected_' + centrality_measure + '_pval_and_lfc.csv',
-            index=False)
-    else:
-        pathway_scores.to_csv(
-            '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_directed_' + centrality_measure + '_pval_and_lfc.csv',
-            index=False)
+#     pathway_scores = pathway_scores.sort_values(by='unnormalized', ascending=False).dropna()
+#     # change location of saved csvs to be parameter
+#     if undirected:
+#         pathway_scores.to_csv(
+#             '/data4/mankovic/GSE73072/network_centrality/undirected/gse73072_undirected_' + centrality_measure + '_pval_and_lfc.csv',
+#             index=False)
+#     else:
+#         pathway_scores.to_csv(
+#             '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_directed_' + centrality_measure + '_pval_and_lfc.csv',
+#             index=False)

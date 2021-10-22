@@ -12,6 +12,14 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 
 class GLPE(BaseEstimator):
+    '''
+    This is a class for Generalized Linear Pathway Expression. 
+    Creates Pathway expression vectors from a pathway transition matrix and a dataset.
+
+        pathway_transition_matrix (numpy array) pathway x features with weights for each 
+                                                feature in a pathway
+        X (numpy array) subject x features with the dataset.
+    '''
 
     def __init__(self, pathway_transition_matrix: ndarray = None):
         # set params
@@ -35,10 +43,14 @@ class GLPE(BaseEstimator):
         return self
 
     def transform(self, X):
+        '''
+        Transforms a dataset using matrix product with pathway_transition_matrix
 
-        # code
-
-        
+        Inputs: 
+            X (numpy array) subject x features with the dataset.
+        Outputs:
+            X_transformed (numpy) subject x pathways pathway expression vectors
+        '''
         #check X is fitted and X is the right type
         check_is_fitted(self)
 
@@ -60,15 +72,25 @@ subclass for centrality pathway transition matrix using biological networks or g
 '''
 class CLPE(GLPE):
     '''
-        incidence matrix: (numpy array)
-                            if netwok_type is precomputed it must have the following columns:
-                                column 0 is the source index which corresponds to row of X
-                                column 1 is the destination index which corresponds to row of X
-                                column 2 is a string 'directed' for a directed edge and 'undireced' for an undirected edge
-                                column 3 is the pathway_id
-                            if network type is not precomputed is must have the follwoing columns:
-                                column 0 corresponds to row of X
-                                column 1 is the pathway_id
+    Creaetes pathway_transition_matrix using network centrality in the fit function
+        Inputs:
+            centrality_measure (string)
+                                Measure of centrality for the network.
+                                Options are: 'degree', 'page_rank', 'large_evec'
+            network_type (string)
+                                The type of network to be used.
+                                Options are: 'precomputed', 'correlation', 'heatkernel'
+            incidence matrix: (numpy array)
+                                if netwok_type is precomputed it must have the following columns:
+                                    column 0 is the source index which corresponds to row of X
+                                    column 1 is the destination index which corresponds to row of X
+                                    column 2 is a string 'directed' for a directed edge and 'undireced' for an undirected edge
+                                    column 3 is the pathway_id
+                                if network type is not precomputed is must have the follwoing columns:
+                                    column 0 corresponds to row of X
+                                    column 1 is the pathway_id
+            heat_kernel_param: (float)
+                                the heat for the heat kernel colculation if network type is heatkernel
             
     '''
     def __init__(self, 
@@ -100,6 +122,19 @@ class CLPE(GLPE):
         return self.heat_kernel_param_
 
     def generate_adjacency_matrix(self, X = None, pathway_name = None):
+        '''
+        Generates a feature adjacency matrix.
+        If network_type is precomputed then we uses the incidence matrix.
+        Otherwise, use network_type to generate the adjacency matrix using X.
+
+
+        Inputs:
+            X (numpy array): A data matrix. (feature x subject)
+            pathway_name (string): The identifier for the pathway. In incidence_matrix.
+        Outputs:
+            A (numpy array): (features in pathway) x (features in pathway) adjacency matrix
+            feature_idx (numpy array): the index in X of the features in the adjacency matrix
+        '''
         
         if self.network_type_ == 'precomputed':
 
@@ -132,23 +167,19 @@ class CLPE(GLPE):
             #generate adjacency matrix
             A = gt.adjacency_matrix(pathway_data, self.network_type_, h_k_param = self.heat_kernel_param_)
 
-        return A, np.array(feature_idx).astype(int)
+        feature_idx = np.array(feature_idx).astype(int)
+
+        return A, feature_idx
 
 
 
     #overrides glpe method
     def fit(self, X: ndarray= None, y=None):
         '''
-        X is an array with features as rows and columns as subjects
+        Generates a pathway transition matrix using network centrality.
 
-        in fit:
-            args:  centrality measure, generation type, pre-computed incedence matrix
-
-            functions:
-                generate a network for each pathway
-                calculate node centrality values
-
-            use these to generate the pathway transition matrix
+        Inputs:
+            X (numpy array): a data matrix that is (features x subject)
         '''
 
         if self.network_type_ == 'precomputed':

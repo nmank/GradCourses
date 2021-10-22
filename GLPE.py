@@ -142,8 +142,6 @@ class CLPE(GLPE):
             edge_idx = np.where(self.incidence_matrix_[:,3] == pathway_name)[0]
             pathway_incidence = self.incidence_matrix_[edge_idx,:3]
             
-            
-
             #features in this pathway
             feature_idx = np.unique(pathway_incidence[:,:2])
             n_nodes = len(feature_idx)
@@ -156,18 +154,23 @@ class CLPE(GLPE):
                 A[i, j] = 1
                 if row[2] == 'undirected':
                     A[j, i] = A[i, j].copy()
+            feature_idx = np.array(feature_idx).astype(int)
+
         else:
             #feature_ids in the pathway
-            idx = np.where(self.incidence_matrix_[:,1] == pathway_name)
+            idx = np.where(self.incidence_matrix_[:,1] == pathway_name)[0]
             feature_idx = self.incidence_matrix_[idx,0]
 
+            feature_idx = np.array(feature_idx).astype(int)
+            
             #data matrix for features in one pathway (subjects x features)
-            pathway_data =  X[feature_idx,:].T
+            pathway_data =  X[:,feature_idx]
 
             #generate adjacency matrix
             A = gt.adjacency_matrix(pathway_data, self.network_type_, h_k_param = self.heat_kernel_param_)
 
-        feature_idx = np.array(feature_idx).astype(int)
+
+        
 
         return A, feature_idx
 
@@ -208,8 +211,11 @@ class CLPE(GLPE):
 
             #add feature scores to row for pathway_transition matrix
             score_row = np.zeros(n_features)
+
+            print(feature_idx)
+            print(score_row)
    
-            score_row[np.array(feature_idx)] = scores
+            score_row[feature_idx] = scores
 
             #add to pathway_transition_matrix
             self.pathway_transition_matrix_.append(score_row)

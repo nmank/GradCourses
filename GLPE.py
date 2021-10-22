@@ -211,9 +211,6 @@ class CLPE(GLPE):
 
             #add feature scores to row for pathway_transition matrix
             score_row = np.zeros(n_features)
-
-            print(feature_idx)
-            print(score_row)
    
             score_row[feature_idx] = scores
 

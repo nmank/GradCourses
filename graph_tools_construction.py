@@ -30,7 +30,9 @@ To Do:
 
 def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = False, h_k_ord = 2):
     '''
-    A function that builds an adjacecny matrix out of data using two methods
+    A function that builds an adjacecny matrix out of data using two methods.
+
+    Nodes are columns of the data matrix X!
 
     inputs: data matrix 
                 a numpy array with n rows m columns (m data points living in R^n)

@@ -104,6 +104,7 @@ class CLPE(GLPE):
         self.network_type_ = str(network_type)
         self.incidence_matrix_ = np.array(incidence_matrix)
         self.heat_kernel_param_ = float(heat_kernel_param)
+        self.pathway_names_ = []
     
     @property
     def centrality_measure(self):
@@ -120,6 +121,10 @@ class CLPE(GLPE):
     @property
     def heat_kernel_param(self):
         return self.heat_kernel_param_
+
+    @property
+    def pathway_names(self):
+        return self.pathway_names_
 
     def generate_adjacency_matrix(self, X = None, pathway_name = None):
         '''
@@ -187,10 +192,10 @@ class CLPE(GLPE):
 
         if self.network_type_ == 'precomputed':
             feature_names = np.unique(self.incidence_matrix_[:, :2])
-            pathway_names = np.unique(self.incidence_matrix_[:, 3])
+            self.pathway_names_ = np.unique(self.incidence_matrix_[:, 3])
         else:
             feature_names = np.unique(self.incidence_matrix_[:, :1])
-            pathway_names = np.unique(self.incidence_matrix_[:,1])
+            self.pathway_names_ = np.unique(self.incidence_matrix_[:,1])
             
 
         n_features = len(feature_names)
@@ -198,13 +203,18 @@ class CLPE(GLPE):
         self.pathway_transition_matrix_ = []
 
         #define pathway names
-        for pathway_name in pathway_names:
+        for pathway_name in self.pathway_names_:
     
             #adjacency matrix
             A, feature_idx = self.generate_adjacency_matrix(X, pathway_name)
 
             #centrality scores
             scores = gt.centrality_scores(A, self.centrality_measure_)
+
+            #normalize degree centrality by maximum degree
+            if self.centrality_measure_ == 'degree':
+                degrees = np.sum(A,axis = 0)
+                scores = scores / np.max(degrees)
 
             #normalize centrality score by l1 norm
             scores = scores/np.sum(scores)

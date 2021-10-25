@@ -126,14 +126,11 @@ def run_test(centrality_measure, similarity, file_name):
 
 
 #choose centrality measure
-centrality_measure = 'page_rank'
 
-similarity = 'heatkernel'
-
-run_test(   'degree', 
-            'heatkernel', 
-            '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
-print('degree heat kernel done')
+# run_test(   'degree', 
+#             'heatkernel', 
+#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
+# print('degree heat kernel done')
 
 run_test(   'page_rank', 
             'heatkernel', 

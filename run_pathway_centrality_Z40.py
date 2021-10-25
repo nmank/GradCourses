@@ -53,7 +53,7 @@ def run_test(centrality_measure, similarity, file_name):
     pathway_data = pandas.read_csv('/data4/mankovic/De-Identified_CZ/deidentified_fcpw.csv')
 
 
-    pathway_scores = pandas.DataFrame(columns = ['pathway_id', 'unnormalized', 'path norm', 'feature path norm', 'avg degree norm', 'max_degree_norm', 'feature path count', 'path count'])
+    pathway_scores = pandas.DataFrame(columns = ['pathway_id', 'unnormalized', 'path norm', 'feature path norm', 'avg degree norm', 'max degree norm', 'feature path count', 'path count'])
 
 
     for pathway_id in list(pathway_data['RandID']):

@@ -126,6 +126,10 @@ class CLPE(GLPE):
     def pathway_names(self):
         return self.pathway_names_
 
+    @property
+    def feature_names(self):
+        return self.feature_names_
+
     def generate_adjacency_matrix(self, X = None, pathway_name = None):
         '''
         Generates a feature adjacency matrix.
@@ -191,14 +195,14 @@ class CLPE(GLPE):
         '''
 
         if self.network_type_ == 'precomputed':
-            feature_names = np.unique(self.incidence_matrix_[:, :2])
+            self.feature_names_ = np.unique(self.incidence_matrix_[:, :2])
             self.pathway_names_ = np.unique(self.incidence_matrix_[:, 3])
         else:
-            feature_names = np.unique(self.incidence_matrix_[:, :1])
+            self.feature_names_ = np.unique(self.incidence_matrix_[:, :1])
             self.pathway_names_ = np.unique(self.incidence_matrix_[:,1])
             
 
-        n_features = len(feature_names)
+        n_features = len(self.feature_names_)
 
         self.pathway_transition_matrix_ = []
 

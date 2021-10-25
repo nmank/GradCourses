@@ -59,7 +59,7 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
     # load names of the pathways and init pathway dataframe
     pathway_names = np.unique(np.array(pathway_edges['pathway_id']))
 
-    pathway_scores = pandas.DataFrame(columns = ['pathway_id', 'unnormalized', 'path norm', 'feature path norm', 'avg degree norm', 'max_degree_norm', 'feature path count', 'path count'])
+    pathway_scores = pandas.DataFrame(columns = ['pathway_id', 'unnormalized', 'path norm', 'feature path norm', 'avg degree norm', 'max degree norm', 'feature path count', 'path count'])
 
     lengths = []
 
@@ -133,7 +133,10 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
 pathway_edges = pandas.read_csv('/data3/darpa/omics_databases/ensembl2pathway/reactome_human_pathway_edges.csv').dropna()
 
 # featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/diffgenes_gse73072_pval_and_lfc.csv', index_col=0)
-featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/train_best_probe_ids.csv', index_col=0)
+# featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/train_best_probe_ids.csv', index_col=0)
+featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/ssvm_ranked_features.csv', index_col=0)
+
+
 
 
 pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
@@ -148,17 +151,17 @@ for p in featureset_pids:
         featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
 
 print('starting degree directed')
-outfile = '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_directed_train_best_probe_ids.csv'
+outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_directed_degree_train_ssvm.csv'
 calc_pathway_scores('degree', False, pathway_edges, featureset_eids, outfile)
 
 print('starting page rank directed')
-outfile = '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_directed_train_best_probe_ids.csv'
+outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_directed_pagerank_train_ssvm.csv'
 calc_pathway_scores('page_rank', False, pathway_edges, featureset_eids, outfile)
 
 print('starting degree undirected')
-outfile = '/data4/mankovic/GSE73072/network_centrality/undirected/gse73072_undirected_train_best_probe_ids.csv'
+outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_undirected_degree_train_ssvm.csv'
 calc_pathway_scores('degree', True, pathway_edges, featureset_eids, outfile)
 
 print('starting page rank undirected')
-outfile = '/data4/mankovic/GSE73072/network_centrality/undirected/gse73072_undirected_train_best_probe_ids.csv'
+outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_undirected_pagerank_train_ssvm.csv'
 calc_pathway_scores('page_rank', True, pathway_edges, featureset_eids, outfile)

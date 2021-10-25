@@ -827,7 +827,7 @@ def centrality_scores(A, centrality = 'large_evec'):
         #sum by out edges
         degrees = np.sum(A,axis = 0)
         if A.shape[0] > 1:
-            scores = degrees/np.max(degrees)
+            scores = degrees
         else:
             scores = np.array([1])
         

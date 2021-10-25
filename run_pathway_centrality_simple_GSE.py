@@ -32,7 +32,9 @@ def make_network(pathway_name, all_edge_dataframe, undirected):
     node_eids = np.array(list(set(edge_dataframe['src']).union(set(edge_dataframe['dest']))))
 
     if 'weight' in list(edge_dataframe.columns):
-         weighted = True
+        weighted = True
+    else:
+        weighted = False
 
     n_nodes = len(node_eids)
 
@@ -57,7 +59,7 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
     # load names of the pathways and init pathway dataframe
     pathway_names = np.unique(np.array(pathway_edges['pathway_id']))
 
-    pathway_scores = pandas.DataFrame(columns = ['pathway_id', 'unnormalized', 'path norm', 'feature path norm', 'avg degree norm', 'feature path count'])
+    pathway_scores = pandas.DataFrame(columns = ['pathway_id', 'unnormalized', 'path norm', 'feature path norm', 'avg degree norm', 'max_degree_norm', 'feature path count', 'path count'])
 
     lengths = []
 
@@ -79,9 +81,8 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
         #calculate pathway scores
         scores = gt.centrality_scores(A, centrality_measure)
 
-        #average degree
+        #degrees
         degrees = np.sum(A,axis = 0)
-        avg_degree = np.mean(degrees)
 
         #find the indices of the nodes in the adjacency matrix that correspond to nodes in the featureset
         idx = [string_node_eids.index(r) for r in discriminatory_nodes]
@@ -98,8 +99,10 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
                                                     'unnormalized': pathway_score, 
                                                     'path norm': pathway_score/len(scores), 
                                                     'feature path norm': pathway_score/len(node_scores), 
-                                                    'avg degree norm': pathway_score/avg_degree, 
-                                                    'feature path count': len(node_scores)}, 
+                                                    'avg degree norm': pathway_score/np.mean(degrees), 
+                                                    'max degree norm': pathway_score/np.max(degrees),
+                                                    'feature path count': len(node_scores),
+                                                    'path count' : len(scores)},
                                                     ignore_index = True)
 
             scores_list.append(pathway_score)
@@ -142,16 +145,16 @@ for p in featureset_pids:
 
 print('starting degree directed')
 outfile = '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_directed_degree_pval_and_lfc.csv'
-calc_pathway_scores('degree', False, pid_2_eid, pathway_edges, featureset, outfile)
+calc_pathway_scores('degree', False, pathway_edges, featureset_eids, outfile)
 
 print('starting page rank directed')
 outfile = '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_directed_page_rank_pval_and_lfc.csv'
-calc_pathway_scores('page_rank', False, pid_2_eid, pathway_edges, featureset, outfile)
+calc_pathway_scores('page_rank', False, pathway_edges, featureset_eids, outfile)
 
 print('starting degree undirected')
 outfile = '/data4/mankovic/GSE73072/network_centrality/directed/gse73072_undirected_degree_pval_and_lfc.csv'
-calc_pathway_scores('degree', True, pid_2_eid, pathway_edges, featureset, outfile)
+calc_pathway_scores('degree', True, pathway_edges, featureset_eids, outfile)
 
 print('starting page rank undirected')
 outfile = '/data4/mankovic/GSE73072/network_centrality/undirected/gse73072_directed_page_rank_pval_and_lfc.csv'
-calc_pathway_scores('page_rank', True, pid_2_eid, pathway_edges, featureset, outfile)
+calc_pathway_scores('page_rank', True, pathway_edges, featureset_eids, outfile)

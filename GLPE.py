@@ -47,9 +47,9 @@ class GLPE(BaseEstimator):
         Transforms a dataset using matrix product with pathway_transition_matrix
 
         Inputs: 
-            X (numpy array) subject x features with the dataset.
+            X (numpy array) (subject x features) with the dataset.
         Outputs:
-            X_transformed (numpy) subject x pathways pathway expression vectors
+            X_transformed (numpy) (subject x pathways) pathway expression vectors
         '''
         #check X is fitted and X is the right type
         check_is_fitted(self)
@@ -82,12 +82,12 @@ class CLPE(GLPE):
                                 Options are: 'precomputed', 'correlation', 'heatkernel'
             incidence matrix: (numpy array)
                                 if netwok_type is precomputed it must have the following columns:
-                                    column 0 is the source index which corresponds to row of X
-                                    column 1 is the destination index which corresponds to row of X
+                                    column 0 is the source index which corresponds to column of X
+                                    column 1 is the destination index which corresponds to column of X
                                     column 2 is a string 'directed' for a directed edge and 'undireced' for an undirected edge
                                     column 3 is the pathway_id
                                 if network type is not precomputed is must have the follwoing columns:
-                                    column 0 corresponds to row of X
+                                    column 0 corresponds to column of X
                                     column 1 is the pathway_id
             heat_kernel_param: (float)
                                 the heat for the heat kernel colculation if network type is heatkernel
@@ -129,7 +129,7 @@ class CLPE(GLPE):
 
 
         Inputs:
-            X (numpy array): A data matrix. (feature x subject)
+            X (numpy array): A data matrix. (subject x features)
             pathway_name (string): The identifier for the pathway. In incidence_matrix.
         Outputs:
             A (numpy array): (features in pathway) x (features in pathway) adjacency matrix
@@ -182,7 +182,7 @@ class CLPE(GLPE):
         Generates a pathway transition matrix using network centrality.
 
         Inputs:
-            X (numpy array): a data matrix that is (features x subject)
+            X (numpy array): a data matrix that is (subject x features)
         '''
 
         if self.network_type_ == 'precomputed':

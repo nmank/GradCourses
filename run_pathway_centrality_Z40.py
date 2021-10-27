@@ -83,7 +83,6 @@ def run_test(centrality_measure, similarity, file_name):
 
             #average degree
             degrees = np.sum(A,axis = 0)
-            avg_degree = np.mean(degrees)
 
             #centrality scores
             scores = gt.centrality_scores(A,centrality_measure)
@@ -127,32 +126,32 @@ def run_test(centrality_measure, similarity, file_name):
 
 #choose centrality measure
 
-# run_test(   'degree', 
-#             'heatkernel', 
-#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
-# print('degree heat kernel done')
-
-run_test(   'page_rank', 
+run_test(   'degree', 
             'heatkernel', 
             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
 print('degree heat kernel done')
 
-run_test(   'large_evec', 
-            'heatkernel', 
-            '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
-print('large evec heat kernel done')
+# run_test(   'page_rank', 
+#             'heatkernel', 
+#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
+# print('degree heat kernel done')
 
-run_test(   'degree', 
-            'correlation', 
-            '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
-print('degree correlation done')
+# run_test(   'large_evec', 
+#             'heatkernel', 
+#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
+# print('large evec heat kernel done')
 
-run_test(   'page_rank', 
-            'correlation', 
-            '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
-print('page rank correlation done')
+# run_test(   'degree', 
+#             'correlation', 
+#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
+# print('degree correlation done')
 
-run_test(   'large_evec', 
-            'correlation', 
-            '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
-print('large evec correlation done')
+# run_test(   'page_rank', 
+#             'correlation', 
+#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
+# print('page rank correlation done')
+
+# run_test(   'large_evec', 
+#             'correlation', 
+#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
+# print('large evec correlation done')

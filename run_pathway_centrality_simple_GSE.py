@@ -138,30 +138,34 @@ featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featur
 
 
 
+#do this only for train_best_probe_ids.csv file
 
-pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
-
+# pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
 #featureset_pids
-featureset_pids = list(featureset.index)
+# featureset_pids = list(featureset.index)
 
-featureset_eids = []
-#load eids from the probeids in the featureset
-for p in featureset_pids:
-    if p in list(pid_2_eid['ProbeID']):
-        featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
+# featureset_eids = []
+# #load eids from the probeids in the featureset
+# for p in featureset_pids:
+#     if p in list(pid_2_eid['ProbeID']):
+#         featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
+
+
+#do this for top 316 ssvm features with frequency greater than 8
+featureset_eids = list(featureset.query("Frequency>8"))
 
 print('starting degree directed')
-outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_directed_degree_train_ssvm.csv'
+outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_directed_degree_train_ssvm8.csv'
 calc_pathway_scores('degree', False, pathway_edges, featureset_eids, outfile)
 
 print('starting page rank directed')
-outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_directed_pagerank_train_ssvm.csv'
+outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_directed_pagerank_train_ssvm8.csv'
 calc_pathway_scores('page_rank', False, pathway_edges, featureset_eids, outfile)
 
 print('starting degree undirected')
-outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_undirected_degree_train_ssvm.csv'
+outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_undirected_degree_train_ssvm8.csv'
 calc_pathway_scores('degree', True, pathway_edges, featureset_eids, outfile)
 
 print('starting page rank undirected')
-outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_undirected_pagerank_train_ssvm.csv'
+outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_undirected_pagerank_train_ssvm8.csv'
 calc_pathway_scores('page_rank', True, pathway_edges, featureset_eids, outfile)

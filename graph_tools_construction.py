@@ -844,6 +844,7 @@ def centrality_scores(A, centrality = 'large_evec'):
                 A_sum = np.sum(A[:,i])
                 if A_sum == 0:
                     M[:,i] = A[:,i]
+                    print('dangling nodes for page rank')
                 else:
                     M[:,i] = A[:,i]/A_sum
 
@@ -851,14 +852,25 @@ def centrality_scores(A, centrality = 'large_evec'):
             eps = 0.001
             d = 0.85
 
+            #old and slow
+            # v = np.random.rand(n, 1)
+            # v = v / np.linalg.norm(v, 1)
+            # last_v = np.ones((n, 1), dtype=np.float32) * 100
+            # M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
+
+            # while np.linalg.norm(v - last_v, 2) > eps:
+            #     last_v = v
+            #     v = M_hat @ v
+
+            #new and fast
             v = np.random.rand(n, 1)
             v = v / np.linalg.norm(v, 1)
-            last_v = np.ones((n, 1), dtype=np.float32) * 100
-            M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
-
-            while np.linalg.norm(v - last_v, 2) > eps:
-                last_v = v
-                v = np.matmul(M_hat, v)
+            err = 1
+            while err > eps:
+                v0 = v.copy()
+                v = (d * M) @ v0 + (1 - d) / n
+                err = np.linalg.norm(v - v0, 2)
+                
             scores = v
         
     else:

@@ -831,13 +831,13 @@ def centrality_scores(A, centrality = 'large_evec'):
         if A.shape[0] > 1:
             scores = degrees
         else:
-            scores = np.array([1])
+            scores = np.array([0])
         
     elif centrality == 'page_rank':
         A = A.T
         n = A.shape[0]
         if n == 1:
-            scores = np.array([1])
+            scores = np.array([0])
         else:
             M = np.zeros((n,n))
             for i in range(n): 

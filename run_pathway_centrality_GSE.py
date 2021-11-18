@@ -79,7 +79,7 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
         discriminatory_nodes = list(set(featureset_eids).intersection(set(string_node_eids)))
 
         #calculate pathway scores
-        scores = gt.centrality_scores(A, centrality_measure)
+        scores = 1 + gt.centrality_scores(A, centrality_measure)
 
         #degrees
         degrees = np.sum(A,axis = 0)
@@ -147,7 +147,7 @@ pathway_edges['src'] = pandas.to_numeric(pathway_edges['src'], downcast='integer
 # for p in featureset_pids:
 #     if p in list(pid_2_eid['ProbeID']):
 #         featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
-# suffix = 'best_probe_ids'
+# directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/lfc/'
 
 #####################
 
@@ -155,24 +155,35 @@ pathway_edges['src'] = pandas.to_numeric(pathway_edges['src'], downcast='integer
 featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/ssvm_ranked_features.csv', index_col=0)
 #do this for top 316 ssvm features with frequency greater than 8
 featureset_eids = [str(f) for f in list(featureset.query("Frequency>8").index)]
-suffix = 'train_ssvm8'
+directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/ssvm/'
 
 #####################
 
 
 
-print('starting degree directed')
-outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_directed_degree_train_'+suffix+'.csv'
-calc_pathway_scores('degree', False, pathway_edges, featureset_eids, outfile)
+# print('starting degree directed')
+# calc_pathway_scores('degree', False, pathway_edges, featureset_eids, directories+'gse73072_directed_degree.csv')
 
-print('starting page rank directed')
-outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_directed_pagerank_train_'+suffix+'.csv'
-calc_pathway_scores('page_rank', False, pathway_edges, featureset_eids, outfile)
+# print('starting degree undirected')
+# calc_pathway_scores('degree', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_degree.csv')
 
-print('starting degree undirected')
-outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_undirected_degree_train_'+suffix+'.csv'
-calc_pathway_scores('degree', True, pathway_edges, featureset_eids, outfile)
+# print('starting page rank undirected')
+# calc_pathway_scores('page_rank', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_pagerank.csv')
 
-print('starting page rank undirected')
-outfile = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/gse73072_undirected_pagerank_train_'+suffix+'.csv'
-calc_pathway_scores('page_rank', True, pathway_edges, featureset_eids, outfile)
+
+#####################
+#null models
+all_eids = np.unique(list(set(pathway_edges['dest']).union(set(pathway_edges['src']))))
+null_featureset = np.random.choice(all_eids, len(featureset_eids), replace = False)
+null_featureset = [str(f) for f in null_featureset]
+
+for trial in range(20):
+    print('Null trial'+str(trial))
+    print('starting degree directed')
+    calc_pathway_scores('degree', False, pathway_edges, null_featureset, directories+'gse73072_directed_degree_null'+str(trial)+'.csv')
+
+    print('starting degree undirected')
+    calc_pathway_scores('degree', True, pathway_edges, null_featureset, directories+'gse73072_undirected_degree_null'+str(trial)+'.csv')
+
+    print('starting page rank undirected')
+    calc_pathway_scores('page_rank', True, pathway_edges, null_featureset, directories+'gse73072_undirected_pagerank_null'+str(trial)+'.csv')

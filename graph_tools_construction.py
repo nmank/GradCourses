@@ -296,7 +296,7 @@ def laplace_partition(A, fiedler = True, k = 1):
 
 
 
-def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_node, fiedler_switch =True):
+def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_node, fiedler_switch =True, stop_criteria = 'size'):
     '''
     A recursive function that clusters the graph using laplace partitiions
     
@@ -315,6 +315,8 @@ def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_no
                     the cluster nodes, just pass in []		
              6) all_clusters_node
                     A list of arrays containing the nodes from each cluster 
+             7) fiedler_switch
+             8) stop_criteria
     outputs: none
     '''
     #partition the data using the fiedler vector
@@ -342,14 +344,55 @@ def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_no
             A2[i,j] = A[N2[i],N2[j]]
     #add this cluster of nodes to the list of nodes
     all_clusters_node.append(np.array([int(node) for node in nodes]))
-    #store the final clusters and their adjacency matrices
-    if s1 < min_clust_sz or s2 < min_clust_sz:
-        clst_adj.append(A)
-        clst_node.append(nodes)
-    #if we are not done, recurse
-    if s1 >= min_clust_sz and s2 >= min_clust_sz:
-        cluster_laplace(A1, clst_adj, nodes1, min_clust_sz, clst_node, all_clusters_node)
-        cluster_laplace(A2, clst_adj, nodes2, min_clust_sz, clst_node, all_clusters_node)
+
+    if stop_criteria == 'size':
+
+        keep_going = s1 >= min_clust_sz and s2 >= min_clust_sz
+
+        #store the final clusters and their adjacency matrices
+        if not keep_going:
+            clst_adj.append(A)
+            clst_node.append(nodes)
+        #if we are not done, recurse
+        else :
+            cluster_laplace(A1, clst_adj, nodes1, min_clust_sz, clst_node, all_clusters_node)
+            cluster_laplace(A2, clst_adj, nodes2, min_clust_sz, clst_node, all_clusters_node)
+
+    elif stop_criteria == 'weight':
+
+        mx = np.ma.masked_array(A, mask=np.eye(A.shape[0]))
+        if s1 > 1:
+            mx1 = np.ma.masked_array(A1, mask=np.eye(s1))
+        else:
+            mx1 = A1.copy()
+        if s2 > 1:
+            mx2 = np.ma.masked_array(A2, mask=np.eye(s2))
+        else:
+            mx2 = A2.copy()
+
+        med = np.ma.mean(mx)
+        med1 = np.ma.mean(mx1)
+        med2 = np.ma.mean(mx2)
+
+        keep_going1 = med <= med1
+        keep_going2 = med <= med2
+        keep_going = keep_going1 or keep_going2 
+
+        #store the final clusters and their adjacency matrices
+        if not keep_going:
+            clst_adj.append(A)
+            clst_node.append(nodes)
+        #if we are not done, recurse
+        elif keep_going1:
+            cluster_laplace(A1, clst_adj, nodes1, min_clust_sz, clst_node, all_clusters_node)
+        elif keep_going2:
+            cluster_laplace(A2, clst_adj, nodes2, min_clust_sz, clst_node, all_clusters_node)
+        
+
+    else:
+        print('stop_criteria not recognized')
+    
+    
 
 
 def embedgraph(A):
@@ -831,19 +874,20 @@ def centrality_scores(A, centrality = 'large_evec'):
         if A.shape[0] > 1:
             scores = degrees
         else:
-            scores = np.array([1])
+            scores = np.array([0])
         
     elif centrality == 'page_rank':
         A = A.T
         n = A.shape[0]
         if n == 1:
-            scores = np.array([1])
+            scores = np.array([0])
         else:
             M = np.zeros((n,n))
             for i in range(n): 
                 A_sum = np.sum(A[:,i])
                 if A_sum == 0:
                     M[:,i] = A[:,i]
+                    print('dangling nodes for page rank')
                 else:
                     M[:,i] = A[:,i]/A_sum
 
@@ -851,14 +895,25 @@ def centrality_scores(A, centrality = 'large_evec'):
             eps = 0.001
             d = 0.85
 
+            #old and slow
+            # v = np.random.rand(n, 1)
+            # v = v / np.linalg.norm(v, 1)
+            # last_v = np.ones((n, 1), dtype=np.float32) * 100
+            # M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
+
+            # while np.linalg.norm(v - last_v, 2) > eps:
+            #     last_v = v
+            #     v = M_hat @ v
+
+            #new and fast
             v = np.random.rand(n, 1)
             v = v / np.linalg.norm(v, 1)
-            last_v = np.ones((n, 1), dtype=np.float32) * 100
-            M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
-
-            while np.linalg.norm(v - last_v, 2) > eps:
-                last_v = v
-                v = np.matmul(M_hat, v)
+            err = 1
+            while err > eps:
+                v0 = v.copy()
+                v = (d * M) @ v0 + (1 - d) / n
+                err = np.linalg.norm(v - v0, 2)
+                
             scores = v
         
     else:

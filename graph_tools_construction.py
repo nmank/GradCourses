@@ -374,9 +374,9 @@ def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_no
         med1 = np.ma.mean(mx1)
         med2 = np.ma.mean(mx2)
 
-        keep_going1 = med <= med1
-        keep_going2 = med <= med2
-        keep_going = keep_going1 or keep_going2 
+        keep_going1 = med < med1
+        keep_going2 = med < med2
+        keep_going = keep_going1 or keep_going2
 
         #store the final clusters and their adjacency matrices
         if not keep_going:

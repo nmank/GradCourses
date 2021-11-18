@@ -147,7 +147,7 @@ pathway_edges['src'] = pandas.to_numeric(pathway_edges['src'], downcast='integer
 # for p in featureset_pids:
 #     if p in list(pid_2_eid['ProbeID']):
 #         featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
-# suffix = 'best_probe_ids'
+# directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/lfc/'
 
 #####################
 
@@ -161,20 +161,21 @@ directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr
 
 
 
-print('starting degree directed')
-calc_pathway_scores('degree', False, pathway_edges, featureset_eids, directories+'gse73072_directed_degree.csv')
+# print('starting degree directed')
+# calc_pathway_scores('degree', False, pathway_edges, featureset_eids, directories+'gse73072_directed_degree.csv')
 
-print('starting degree undirected')
-calc_pathway_scores('degree', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_degree.csv')
+# print('starting degree undirected')
+# calc_pathway_scores('degree', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_degree.csv')
 
-print('starting page rank undirected')
-calc_pathway_scores('page_rank', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_pagerank.csv')
+# print('starting page rank undirected')
+# calc_pathway_scores('page_rank', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_pagerank.csv')
 
 
 #####################
 #null models
 all_eids = np.unique(list(set(pathway_edges['dest']).union(set(pathway_edges['src']))))
-null_featureset = np.random.choice(all_eids, len(featureset_eids))
+null_featureset = np.random.choice(all_eids, len(featureset_eids), replace = False)
+null_featureset = [str(f) for f in null_featureset]
 
 for trial in range(20):
     print('Null trial'+str(trial))

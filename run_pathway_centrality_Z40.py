@@ -18,7 +18,7 @@ from orthrus.core.helper import load_object
 '''
 By Nate Mankovich 10/8/21
 
-Pathway scores for Z40 dataset using features in: /data4/mankovic/De-Identified_CZ/z40_f_ranks.pickle.
+Pathway scores for Z40 dataset using features in: /data4/mankovic/De-Identified_CZ/z42_features.csv.
 
 A network for a pathway is generated using correlation. 
 

@@ -24,6 +24,7 @@ class GLPE(BaseEstimator):
     def __init__(self, pathway_transition_matrix: ndarray = None):
         # set params
         self.pathway_transition_matrix_ = np.array(pathway_transition_matrix)
+        self.feature_names_ = None
 
     @property
     def pathway_transition_matrix(self):
@@ -35,6 +36,10 @@ class GLPE(BaseEstimator):
             return csr_matrix(self.pathway_transition_matrix_)
         else:
             return self.pathway_transition_matrix_
+
+    @property
+    def feature_names(self):
+        return self.feature_names_
 
     def fit(self, X=None, y=None):
 
@@ -56,12 +61,15 @@ class GLPE(BaseEstimator):
 
         X = check_array(X)
 
+        #restrict X to freature names using copy
+        Y = X[:,self.feature_names.astype(int)]
+
         # pathway_transition_matrix is pathway x features
         # X is subject x features
         #output is subject x pathway
         
         # matrix multiplication
-        X_transformed = self.pathway_transition_matrix.dot( X.T ).T
+        X_transformed = self.pathway_transition_matrix.dot( Y.T ).T
 
         return X_transformed
 
@@ -126,9 +134,6 @@ class CLPE(GLPE):
     def pathway_names(self):
         return self.pathway_names_
 
-    @property
-    def feature_names(self):
-        return self.feature_names_
 
     def generate_adjacency_matrix(self, X = None, pathway_name = None):
         '''
@@ -194,6 +199,8 @@ class CLPE(GLPE):
             X (numpy array): a data matrix that is (subject x features)
         '''
 
+        X = check_array(X)
+
         if self.network_type_ == 'precomputed':
             self.feature_names_ = np.unique(self.incidence_matrix_[:, :2])
             self.pathway_names_ = np.unique(self.incidence_matrix_[:, 3])
@@ -232,6 +239,9 @@ class CLPE(GLPE):
             self.pathway_transition_matrix_.append(score_row)
         
         self.pathway_transition_matrix_ = np.vstack(self.pathway_transition_matrix_)
+
+        # replace na with 0
+        np.nan_to_num(self.pathway_transition_matrix_, copy=False)
 
         return self
 

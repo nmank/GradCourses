@@ -34,7 +34,7 @@ We only do this for pathways with more than 5 genes.
 '''
 
 
-def run_test(centrality_measure, similarity, file_name):
+def run_test(centrality_measure, similarity, file_name, null = False):
     #load data
         # f_ranks = load_object('/data4/mankovic/De-Identified_CZ/z40_f_ranks.pickle')
         # feature_ids = f_ranks['frequency'] > 1
@@ -63,6 +63,11 @@ def run_test(centrality_measure, similarity, file_name):
     Z42_dataset.normalize(transform, norm_name='HalfMinimum + Log2')
 
     Z42_data = Z42_dataset.data
+
+
+    if null:
+        all_randIDs = np.unique(list(Z42_data.columns))
+        featureset_randIDs = np.random.choice(all_randIDs, len(featureset_randIDs), replace = False)
 
     pathway_data = pandas.read_csv('/data4/mankovic/De-Identified_CZ/deidentified_fcpw.csv')
 
@@ -145,16 +150,19 @@ def run_test(centrality_measure, similarity, file_name):
 
 #choose centrality measure
 
-save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_'
+save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
 
+# print('heat kernel started')
 # run_test(   'degree', 
 #             'heatkernel', 
-#             save_prefix)
+#             save_prefix,
+#             null = True)
 # print('degree heat kernel done')
 
 # run_test(   'page_rank', 
 #             'heatkernel', 
-#             save_prefix)
+#             save_prefix,
+#             null = True)
 # print('degree heat kernel done')
 
 # run_test(   'large_evec', 
@@ -164,12 +172,14 @@ save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_path
 
 run_test(   'degree', 
             'correlation', 
-            save_prefix)
+            save_prefix,
+            null = True)
 print('degree correlation done')
 
 run_test(   'page_rank', 
             'correlation', 
-            save_prefix)
+            save_prefix,
+            null = True)
 print('page rank correlation done')
 
 # run_test(   'large_evec', 

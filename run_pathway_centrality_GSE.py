@@ -98,12 +98,12 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
             featureset_edge_scores = edge_scores[idx]
             
             #degrees
-            degrees = np.sum(A,axis = 0)
+            max_degree = np.max(np.sum(A,axis = 0))
 
         else:
             discriminatory_edge_nodes = []
             featureset_edge_scores = np.array([])
-            degrees = np.array([0])
+            max_degree = 1
 
             
         if len(isolated_dataframe) > 0:
@@ -131,13 +131,14 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
             node_scores = np.hstack([featureset_edge_scores,featureset_isolated_scores])
             pathway_score = np.sum(node_scores)
 
+
             # pathway_score = np.sum(node_scores)
  
             pathway_scores = pathway_scores.append({'pathway_id': pathway_name, 
                                                     'unnormalized': pathway_score, 
                                                     'path norm': pathway_score/len(scores), 
                                                     'feature path norm': pathway_score/len(node_scores), 
-                                                    'max degree norm': pathway_score/np.max(degrees),
+                                                    'max degree norm': pathway_score/max_degree,
                                                     'feature path count': len(node_scores),
                                                     'path count' : len(scores)},
                                                     ignore_index = True)
@@ -219,8 +220,16 @@ for trial in range(20):
     print('Null trial'+str(trial))
 
     #null models
-    all_eids = np.unique(list(set(pathway_edges['dest']).union(set(pathway_edges['src']))))
-    str_all_eids = [str(n) for n in all_eids]
+    source = np.unique(pathway_edges['src'])
+    source = source[~np.isnan(source)]
+    dest = np.unique(pathway_edges['dest'])
+    dest = dest[~np.isnan(dest)]
+    isolated = np.unique(pathway_edges['other_genes'])
+    isolated = isolated[~np.isnan(isolated)]
+
+    #make an empty dataframe using all the eids from pathway_edges
+    str_all_eids = [str(int(eid)) for eid in np.sort(list(set(source).union(set(dest).union(set(isolated)))))]
+
     
     np.random.seed(trial)
     null_featureset = np.random.choice(str_all_eids, len(set(featureset_eids).intersection(set(str_all_eids))), replace = False)

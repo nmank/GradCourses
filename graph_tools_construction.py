@@ -914,7 +914,7 @@ def centrality_scores(A, centrality = 'large_evec'):
                 v = (d * M) @ v0 + (1 - d) / n
                 err = np.linalg.norm(v - v0, 2)
                 
-            scores = v
+            scores = v.flatten()
         
     else:
         print('centrality type not recognized')

@@ -50,7 +50,7 @@ def run_test(centrality_measure, similarity, file_name, null = False):
         # Z40_data = Z40_dataset.data
 
     #load Kartikay's gene feature set and store RandIDs for genes
-    Z42_features = pandas.read_csv('/data4/mankovic/De-Identified_CZ/z42_features.csv', index_col = 0)
+    Z42_features = pandas.read_csv('/data4/mankovic/De-Identified_CZ/z42_features_after_hyperparameter_search.csv', index_col = 0)
     featureset_randIDs = [str(r) for r in list(Z42_features.index)]
 
     #load the entire C1 and Z40 dataset and select the C1 data and metadata
@@ -69,7 +69,10 @@ def run_test(centrality_measure, similarity, file_name, null = False):
         all_randIDs = np.unique(list(Z42_data.columns))
         featureset_randIDs = np.random.choice(all_randIDs, len(featureset_randIDs), replace = False)
 
-    pathway_data = pandas.read_csv('/data4/mankovic/De-Identified_CZ/deidentified_fcpw.csv')
+    pathway_data = pandas.read_csv('/data4/mankovic/De-Identified_CZ/deidentified_fcpw_updated.csv')
+    pathway_data = pathway_data.fillna(0)
+    pathway_data = pathway_data.astype(bool)
+
 
 
     pathway_scores = pandas.DataFrame(columns = ['pathway_id', 'unnormalized', 'path norm', 'feature path norm', 'avg degree norm', 'max degree norm', 'feature path count', 'path count'])
@@ -99,22 +102,22 @@ def run_test(centrality_measure, similarity, file_name, null = False):
                     one_pathway_data.append(np.array(Z42_data[randID]))
             
         #data matrix
-        X = np.vstack(one_pathway_data).T
+        if len(one_pathway_data) > 0:
+            X = np.vstack(one_pathway_data).T
 
-        #adjacency matrix
-        A = gt.adjacency_matrix(X,similarity, h_k_param=300)
+            #adjacency matrix
+            A = gt.adjacency_matrix(X,similarity, h_k_param=300)
 
-        #average degree
-        degrees = np.sum(A,axis = 0)
+            #average degree
+            degrees = np.sum(A,axis = 0)
 
-        #centrality scores
-        scores = 1 + gt.centrality_scores(A,centrality_measure)
+            #centrality scores
+            scores = 1 + gt.centrality_scores(A,centrality_measure)
 
-        #genes in pathway that are also in the featureset
-        intersect_randIDs = list(set(pathway_randIDs).intersection(set(featureset_randIDs)))
+            #genes in pathway that are also in the featureset
+            intersect_randIDs = list(set(pathway_randIDs).intersection(set(featureset_randIDs)))
 
-        #calculate the weighted sum of the genes in the pathway and in the featureset
-        if len(intersect_randIDs) != 0:
+            #calculate the weighted sum of the genes in the pathway and in the featureset
             #index of nodes in graph that correspond to genes in the pathway as in the featureset
             idx = [pathway_randIDs.index(r) for r in intersect_randIDs]
 
@@ -150,7 +153,20 @@ def run_test(centrality_measure, similarity, file_name, null = False):
 
 #choose centrality measure
 
-save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
+# save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_'
+
+# print('heat kernel started')
+# run_test(   'degree', 
+#             'heatkernel', 
+#             save_prefix)
+# print('degree heat kernel done')
+
+# run_test(   'page_rank', 
+#             'heatkernel', 
+#             save_prefix)
+# print('degree heat kernel done')
+
+# save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
 
 # print('heat kernel started')
 # run_test(   'degree', 
@@ -170,17 +186,32 @@ save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_path
 #             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
 # print('large evec heat kernel done')
 
+save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_'
+
+print('begin correlation')
+run_test(   'degree', 
+            'correlation', 
+            save_prefix)
+print('degree correlation done')
+
+run_test(   'page_rank', 
+            'correlation', 
+            save_prefix)
+print('page rank correlation done')
+
+save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
+
 run_test(   'degree', 
             'correlation', 
             save_prefix,
             null = True)
-print('degree correlation done')
+print('degree correlation null done')
 
 run_test(   'page_rank', 
             'correlation', 
             save_prefix,
             null = True)
-print('page rank correlation done')
+print('page rank correlation null done')
 
 # run_test(   'large_evec', 
 #             'correlation', 

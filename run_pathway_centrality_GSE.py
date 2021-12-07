@@ -3,10 +3,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 import graph_tools_construction as gt
 
-
-
-
-
 def make_network(edge_dataframe, undirected, node_eids):
     '''
     Make a network from the known edges.
@@ -168,36 +164,37 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
 # metadata = pandas.read_csv('/data4/kehoe/GSE73072/GSE73072_metadata.csv')
 # vardata = pandas.read_csv('/data4/kehoe/GSE73072/GSE73072_vardata.csv')
 
-pathway_edges = pandas.read_csv('//data3/darpa/omics_databases/ensembl2pathway/reactome_edges_overlap_fixed1_isolated.csv')
+pathway_edges = pandas.read_csv('/data3/darpa/omics_databases/ensembl2pathway/reactome_edges_overlap_fixed1_noisolated.csv')
 pathway_edges['dest'] = pandas.to_numeric(pathway_edges['dest'], downcast='integer') 
 pathway_edges['src'] = pandas.to_numeric(pathway_edges['src'], downcast='integer') 
-for pref in ["MN", "NM", "NR", "NC", "U"]:
-    pathway_edges = pathway_edges[~pathway_edges.other_genes.str.contains(pref).fillna(False)]
 
-pathway_edges['other_genes'] = pandas.to_numeric(pathway_edges['other_genes'], downcast='integer') 
+# for pref in ["MN", "NM", "NR", "NC", "U"]:
+#     pathway_edges = pathway_edges[~pathway_edges.other_genes.str.contains(pref).fillna(False)]
+
+# pathway_edges['other_genes'] = pandas.to_numeric(pathway_edges['other_genes'], downcast='integer') 
 
 # featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/diffgenes_gse73072_pval_and_lfc.csv', index_col=0)
 
 #####################
 
 #do this only for train_best_probe_ids.csv file
-featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/train_best_probe_ids.csv', index_col=0)
-pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
-featureset_pids = list(featureset.index)
-featureset_eids = []
-#load eids from the probeids in the featureset
-for p in featureset_pids:
-    if p in list(pid_2_eid['ProbeID']):
-        featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
-directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/lfc/'
+# featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/train_best_probe_ids.csv', index_col=0)
+# pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
+# featureset_pids = list(featureset.index)
+# featureset_eids = []
+# #load eids from the probeids in the featureset
+# for p in featureset_pids:
+#     if p in list(pid_2_eid['ProbeID']):
+#         featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
+# directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/lfc/no_isolated'
 
 #####################
 
 #ssvm features
-# featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/ssvm_ranked_features.csv', index_col=0)
-# #do this for top 316 ssvm features with frequency greater than 8
-# featureset_eids = [str(f) for f in list(featureset.query("Frequency>8").index)]
-# directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/ssvm/'
+featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/ssvm_ranked_features.csv', index_col=0)
+#do this for top 316 ssvm features with frequency greater than 8
+featureset_eids = [str(f) for f in list(featureset.query("Frequency>8").index)]
+directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/ssvm/no_isolated'
 
 #####################
 

@@ -63,15 +63,14 @@ def run_test(centrality_measure, similarity, file_name, null = False):
     Z42_dataset.normalize(transform, norm_name='HalfMinimum + Log2')
 
     Z42_data = Z42_dataset.data
-
+    all_randIDs = np.unique(list(Z42_data.columns))
 
     if null:
-        all_randIDs = np.unique(list(Z42_data.columns))
+        np.random.seed(1)
         featureset_randIDs = np.random.choice(all_randIDs, len(featureset_randIDs), replace = False)
 
     pathway_data = pandas.read_csv('/data4/mankovic/De-Identified_CZ/deidentified_fcpw_updated.csv')
     pathway_data = pathway_data.fillna(0)
-    pathway_data = pathway_data.astype(bool)
 
 
 
@@ -87,60 +86,74 @@ def run_test(centrality_measure, similarity, file_name, null = False):
         pathway = pathway_data[pathway_data['RandID'] == pathway_id]
 
         #only do this if there are more than 5 genes in the pathway
-        # if len(np.where(pathway == True)[1]) > 5:
+        if len(np.where(pathway == 1)[1]) > 5:
 
-        one_pathway_data = []
-        pathway_randIDs = []
-        #go through each randID in data
-        for randID in Z42_data.columns:
-            if randID in list(pathway.columns):
-                #if the gene is in the pathway
-                if list(pathway[randID])[0] == True:
-                    #collect randid's in the pathway
-                    pathway_randIDs.append(randID)
-                    #add it's data to the pathway data
-                    one_pathway_data.append(np.array(Z42_data[randID]))
-            
-        #data matrix
-        if len(one_pathway_data) > 0:
-            X = np.vstack(one_pathway_data).T
+            # one_pathway_data = []
+            # pathway_randIDs = []
+            # #go through each randID in data
+            # for randID in all_randIDs:
+            #     if randID in list(pathway.columns[1:]):
+            #         #if the gene is in the pathway
+            #         if list(pathway[randID])[0] == True:
+            #             #collect randid's in the pathway
+            #             pathway_randIDs.append(randID)
+            #             #add it's data to the pathway data
+            #             one_pathway_data.append(np.array(Z42_data[randID]))
 
-            #adjacency matrix
-            A = gt.adjacency_matrix(X,similarity, h_k_param=300)
+            pathway_randIDs = pathway.columns[np.where(pathway == 1)[1]]
+            pathway_randIDs = [str(int(float(p))) for p in  list(pathway_randIDs)]
+            try:
+                X = np.array(Z42_data[pathway_randIDs])
+            except:
+                new_pathway_randIDs = []
+                for p in pathway_randIDs:
+                    if p in all_randIDs:
+                        new_pathway_randIDs.append(p)
+                pathway_randIDs = new_pathway_randIDs
+                X = np.array(Z42_data[pathway_randIDs])
+                
+            #data matrix
+            # if len(one_pathway_data) > 0:
+            if len(X) > 0:
+                # X = np.vstack(one_pathway_data).T
 
-            #average degree
-            degrees = np.sum(A,axis = 0)
+                #adjacency matrix
+                A = gt.adjacency_matrix(X, similarity, h_k_param=300)
 
-            #centrality scores
-            scores = 1 + gt.centrality_scores(A,centrality_measure)
+                #average degree
+                degrees = np.sum(A,axis = 0)
 
-            #genes in pathway that are also in the featureset
-            intersect_randIDs = list(set(pathway_randIDs).intersection(set(featureset_randIDs)))
+                #centrality scores
+                scores = 1 + gt.centrality_scores(A,centrality_measure)
 
-            #calculate the weighted sum of the genes in the pathway and in the featureset
-            #index of nodes in graph that correspond to genes in the pathway as in the featureset
-            idx = [pathway_randIDs.index(r) for r in intersect_randIDs]
+                #genes in pathway that are also in the featureset
+                intersect_randIDs = list(set(pathway_randIDs).intersection(set(featureset_randIDs)))
 
-            #scores for these nodes
-            node_scores = scores[idx]
+                #calculate the weighted sum of the genes in the pathway and in the featureset
+                #index of nodes in graph that correspond to genes in the pathway as in the featureset
+                idx = [pathway_randIDs.index(r) for r in intersect_randIDs]
 
-            #pathway score as sum of node scores 
-            pathway_score = np.sum(node_scores)
+                #scores for these nodes
+                node_scores = scores[idx]
 
-            #degrees
-            degrees = np.sum(A,axis = 0)
+                #pathway score as sum of node scores 
+                pathway_score = np.sum(node_scores)
 
-            #add to dataframe
-            pathway_scores = pathway_scores.append({'pathway_id': pathway_id, 
-                                                    'unnormalized': pathway_score, 
-                                                    'path norm': pathway_score/len(scores), 
-                                                    'feature path norm': pathway_score/len(node_scores), 
-                                                    'avg degree norm': pathway_score/np.mean(degrees), 
-                                                    'max degree norm': pathway_score/np.max(degrees),
-                                                    'feature path count': len(node_scores),
-                                                    'path count' : len(scores)},
-                                                    ignore_index = True)
-        print('percent finished: '+ str(100*ii/all_len))
+                #degrees
+                degrees = np.sum(A,axis = 0)
+
+                #add to dataframe
+                pathway_scores = pathway_scores.append({'pathway_id': pathway_id, 
+                                                        'unnormalized': pathway_score, 
+                                                        'path norm': pathway_score/len(scores), 
+                                                        'feature path norm': pathway_score/len(node_scores), 
+                                                        'avg degree norm': pathway_score/np.mean(degrees), 
+                                                        'max degree norm': pathway_score/np.max(degrees),
+                                                        'feature path count': len(node_scores),
+                                                        'path count' : len(scores)},
+                                                        ignore_index = True)
+            if ii % 100 == 0:
+                print('percent finished: '+ str(100*ii/all_len))
 
 
     #sort pathway scores from highest to lowest
@@ -153,33 +166,33 @@ def run_test(centrality_measure, similarity, file_name, null = False):
 
 #choose centrality measure
 
-# save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_'
+save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_'
 
-# print('heat kernel started')
-# run_test(   'degree', 
-#             'heatkernel', 
-#             save_prefix)
-# print('degree heat kernel done')
+print('heat kernel started')
+run_test(   'degree', 
+            'heatkernel', 
+            save_prefix)
+print('degree heat kernel done')
 
-# run_test(   'page_rank', 
-#             'heatkernel', 
-#             save_prefix)
-# print('degree heat kernel done')
+run_test(   'page_rank', 
+            'heatkernel', 
+            save_prefix)
+print('degree heat kernel done')
 
-# save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
+save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
 
-# print('heat kernel started')
-# run_test(   'degree', 
-#             'heatkernel', 
-#             save_prefix,
-#             null = True)
-# print('degree heat kernel done')
+print('heat kernel started')
+run_test(   'degree', 
+            'heatkernel', 
+            save_prefix,
+            null = True)
+print('degree heat kernel done')
 
-# run_test(   'page_rank', 
-#             'heatkernel', 
-#             save_prefix,
-#             null = True)
-# print('degree heat kernel done')
+run_test(   'page_rank', 
+            'heatkernel', 
+            save_prefix,
+            null = True)
+print('degree heat kernel done')
 
 # run_test(   'large_evec', 
 #             'heatkernel', 
@@ -213,7 +226,7 @@ run_test(   'page_rank',
             null = True)
 print('page rank correlation null done')
 
-# run_test(   'large_evec', 
-#             'correlation', 
-#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
-# print('large evec correlation done')
+run_test(   'large_evec', 
+            'correlation', 
+            '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
+print('large evec correlation done')

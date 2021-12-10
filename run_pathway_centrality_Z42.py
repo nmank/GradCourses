@@ -34,7 +34,7 @@ We only do this for pathways with more than 5 genes.
 '''
 
 
-def run_test(centrality_measure, similarity, file_name, null = False):
+def run_test(centrality_measure, similarity, file_name, null = False, seed = 1):
     #load data
         # f_ranks = load_object('/data4/mankovic/De-Identified_CZ/z40_f_ranks.pickle')
         # feature_ids = f_ranks['frequency'] > 1
@@ -66,7 +66,7 @@ def run_test(centrality_measure, similarity, file_name, null = False):
     all_randIDs = np.unique(list(Z42_data.columns))
 
     if null:
-        np.random.seed(1)
+        np.random.seed(seed)
         featureset_randIDs = np.random.choice(all_randIDs, len(featureset_randIDs), replace = False)
 
     pathway_data = pandas.read_csv('/data4/mankovic/De-Identified_CZ/deidentified_fcpw_updated.csv')
@@ -226,7 +226,38 @@ run_test(   'page_rank',
             null = True)
 print('page rank correlation null done')
 
-run_test(   'large_evec', 
-            'correlation', 
-            '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
-print('large evec correlation done')
+# run_test(   'large_evec', 
+#             'correlation', 
+#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
+# print('large evec correlation done')
+
+for seed in range(20):
+    save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'+str(seed)
+
+    run_test(   'degree', 
+                'correlation', 
+                save_prefix,
+                null = True,
+                seed = seed)
+    print('degree heat kernel done')
+
+    run_test(   'page_rank', 
+                'correlation', 
+                save_prefix,
+                null = True,
+                seed = seed)
+    print('degree heat kernel done')
+
+    run_test(   'degree', 
+                'heatkernel', 
+                save_prefix,
+                null = True,
+                seed = seed)
+    print('degree heat kernel done')
+
+    run_test(   'page_rank', 
+                'heatkernel', 
+                save_prefix,
+                null = True,
+                seed =seed)
+    print('degree heat kernel done')

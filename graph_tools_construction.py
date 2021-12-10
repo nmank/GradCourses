@@ -226,6 +226,7 @@ def random_graph(n):
     '''
     Generate an adjacency matrix of a random graph with n nodes.
     '''
+
     A = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
@@ -233,6 +234,18 @@ def random_graph(n):
                 A[i,j] = np.abs(np.random.random())
                 A[j,i] = A[i,j]
     return A
+
+def erdos_reyni(n,m, seed):
+    '''
+    Generate an adjacency matrix of an unweighted Erdos Reyni graph 
+    with n nodes and m edges with seed
+    '''
+
+    G = nx.gnm_random_graph(n, m, seed=seed)
+    A = nx.to_numpy_array(G, nodelist=list(np.arange(n)))
+
+    return A
+
 
 
 

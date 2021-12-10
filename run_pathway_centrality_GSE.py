@@ -49,7 +49,7 @@ def make_network(edge_dataframe, undirected, node_eids):
 
     return A, node_eids
 
-def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featureset_eids, outfile = 'output.csv'):
+def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featureset_eids, outfile = 'output.csv', random = False, seed = 0):
     '''
     '''
     # load names of the pathways and init pathway dataframe
@@ -73,54 +73,107 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
 
         scores = np.zeros(len(pathway_dataframe))
 
-        if len(edge_dataframe) > 0 :
-            #genes with edges
-            edge_node_eids = np.array(list(set(edge_dataframe['src']).union(set(edge_dataframe['dest']))))
-
+        if random:
             #make adjacency matrix
-            A, n_eids = make_network(edge_dataframe, undirected, edge_node_eids)
-
-            #node eids as strings
-            string_edge_node_eids = [str(int(node)) for node in n_eids]
-
-            #discriminatory genes
-            discriminatory_edge_nodes = list(set(featureset_eids).intersection(set(string_edge_node_eids)))
-
-            edge_scores = 1 + gt.centrality_scores(A, centrality_measure)
-
-            #find the indices of the nodes in the adjacency matrix that correspond to nodes in the featureset
-            idx = [string_edge_node_eids.index(r) for r in discriminatory_edge_nodes]
-
-            featureset_edge_scores = edge_scores[idx]
+            all_node_eids = np.array(list(set(edge_dataframe['src']).union(set(edge_dataframe['dest'])).union(set(isolated_dataframe['other_genes']))))
+            A= gt.erdos_reyni(len(all_node_eids), len(list(edge_dataframe['src'])), seed)
+            isolated_node_eids = []
+            edge_node_eids = []
+            edge_indices = []
+            for i in range(len(A)):
+                if np.sum(A[i,:]) == 0:
+                    isolated_node_eids.append(all_node_eids[i])
+                else:
+                    edge_node_eids.append(all_node_eids[i])
+                    edge_indices.append(i)
             
-            #degrees
-            max_degree = np.max(np.sum(A,axis = 0))
+            if len(edge_node_eids) > 0:
+
+                A = A[np.array(edge_indices), :]
+                A = A[:, np.array(edge_indices)]
+
+                string_edge_node_eids= [str(int(float(node))) for node in edge_node_eids]
+
+                #discriminatory genes
+                discriminatory_edge_nodes = list(set(featureset_eids).intersection(set(string_edge_node_eids)))
+
+                edge_scores = 1 + gt.centrality_scores(A, centrality_measure)
+
+                #find the indices of the nodes in the adjacency matrix that correspond to nodes in the featureset
+                idx = [string_edge_node_eids.index(r) for r in discriminatory_edge_nodes]
+
+                featureset_edge_scores = edge_scores[idx]
+            
+                #degrees
+                max_degree = np.max(np.sum(A,axis = 0))
+            
+            else:
+                discriminatory_edge_nodes = []
+                featureset_edge_scores = np.array([])
+                max_degree = 1
+            
+            if len(isolated_node_eids) > 0:
+                #node eids as strings
+                string_isolated_node_eids = [str(int(float(node))) for node in isolated_node_eids]
+
+                discriminatory_isolated_nodes = list(set(featureset_eids).intersection(set(string_isolated_node_eids)))
+
+                featureset_isolated_scores = np.ones(len(discriminatory_isolated_nodes))
+
+            else:
+                discriminatory_isolated_nodes = []
+                featureset_isolated_scores = np.array([])
 
         else:
-            discriminatory_edge_nodes = []
-            featureset_edge_scores = np.array([])
-            max_degree = 1
+
+            if len(edge_dataframe) > 0 :
+                #genes with edges
+                edge_node_eids = np.array(list(set(edge_dataframe['src']).union(set(edge_dataframe['dest']))))
+
+                #make adjacency matrix
+                A, n_eids = make_network(edge_dataframe, undirected, edge_node_eids)
+
+                #node eids as strings
+                string_edge_node_eids = [str(int(float(node))) for node in n_eids]
+
+                #discriminatory genes
+                discriminatory_edge_nodes = list(set(featureset_eids).intersection(set(string_edge_node_eids)))
+
+                edge_scores = 1 + gt.centrality_scores(A, centrality_measure)
+
+                #find the indices of the nodes in the adjacency matrix that correspond to nodes in the featureset
+                idx = [string_edge_node_eids.index(r) for r in discriminatory_edge_nodes]
+
+                featureset_edge_scores = edge_scores[idx]
+                
+                #degrees
+                max_degree = np.max(np.sum(A,axis = 0))
+
+            else:
+                discriminatory_edge_nodes = []
+                featureset_edge_scores = np.array([])
+                max_degree = 1
+
+                
+            if len(isolated_dataframe) > 0:
+                #isolated genes
+                isolated_node_eids = np.array(isolated_dataframe['other_genes'])
+
+                #node eids as strings
+                string_isolated_node_eids = [str(int(node)) for node in isolated_node_eids]
+
+                discriminatory_isolated_nodes = list(set(featureset_eids).intersection(set(string_isolated_node_eids)))
+
+                featureset_isolated_scores = np.ones(len(discriminatory_isolated_nodes))
+
+            else:
+                discriminatory_isolated_nodes = []
+                featureset_isolated_scores = np.array([])
+
+            #find the featureset nodes in the pathway
+            # discriminatory_nodes = discriminatory_edge_nodes + discriminatory_isolated_nodes
 
             
-        if len(isolated_dataframe) > 0:
-            #isolated genes
-            isolated_node_eids = np.array(isolated_dataframe['other_genes'])
-
-            #node eids as strings
-            string_isolated_node_eids = [str(int(node)) for node in isolated_node_eids]
-
-            discriminatory_isolated_nodes = list(set(featureset_eids).intersection(set(string_isolated_node_eids)))
-
-            featureset_isolated_scores = np.ones(len(discriminatory_isolated_nodes))
-
-        else:
-            discriminatory_isolated_nodes = []
-            featureset_isolated_scores = np.array([])
-
-        #find the featureset nodes in the pathway
-        # discriminatory_nodes = discriminatory_edge_nodes + discriminatory_isolated_nodes
-
-        
 
 
         if len(featureset_edge_scores) + len(featureset_isolated_scores) > 0:
@@ -164,12 +217,12 @@ def calc_pathway_scores(centrality_measure, undirected, pathway_edges, featurese
 # metadata = pandas.read_csv('/data4/kehoe/GSE73072/GSE73072_metadata.csv')
 # vardata = pandas.read_csv('/data4/kehoe/GSE73072/GSE73072_vardata.csv')
 
-pathway_edges = pandas.read_csv('/data3/darpa/omics_databases/ensembl2pathway/reactome_edges_overlap_fixed1_noisolated.csv')
+pathway_edges = pandas.read_csv('/data3/darpa/omics_databases/ensembl2pathway/reactome_edges_overlap_fixed1_isolated.csv')
 pathway_edges['dest'] = pandas.to_numeric(pathway_edges['dest'], downcast='integer') 
 pathway_edges['src'] = pandas.to_numeric(pathway_edges['src'], downcast='integer') 
 
-# for pref in ["MN", "NM", "NR", "NC", "U"]:
-#     pathway_edges = pathway_edges[~pathway_edges.other_genes.str.contains(pref).fillna(False)]
+for pref in ["MN", "NM", "NR", "NC", "U"]:
+    pathway_edges = pathway_edges[~pathway_edges.other_genes.str.contains(pref).fillna(False)]
 
 # pathway_edges['other_genes'] = pandas.to_numeric(pathway_edges['other_genes'], downcast='integer') 
 
@@ -194,49 +247,49 @@ pathway_edges['src'] = pandas.to_numeric(pathway_edges['src'], downcast='integer
 featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/ssvm_ranked_features.csv', index_col=0)
 #do this for top 316 ssvm features with frequency greater than 8
 featureset_eids = [str(f) for f in list(featureset.query("Frequency>8").index)]
-directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/ssvm/no_isolated'
+directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/ssvm/isolated/'
 
 #####################
 
+calc_pathway_scores('degree', True, pathway_edges, featureset_eids, directories+'erdos_reyni_gse73072_directed_degree.csv', random = True, seed = 0) 
+
+# print('starting degree directed')
+# calc_pathway_scores('degree', False, pathway_edges, featureset_eids, directories+'gse73072_directed_degree.csv')
+
+# print('starting degree undirected')
+# calc_pathway_scores('degree', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_degree.csv')
+
+# print('starting page rank undirected')
+# calc_pathway_scores('page_rank', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_pagerank.csv')
 
 
-print('starting degree directed')
-calc_pathway_scores('degree', False, pathway_edges, featureset_eids, directories+'gse73072_directed_degree.csv')
-
-print('starting degree undirected')
-calc_pathway_scores('degree', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_degree.csv')
-
-print('starting page rank undirected')
-calc_pathway_scores('page_rank', True, pathway_edges, featureset_eids, directories+'gse73072_undirected_pagerank.csv')
+# #####################
 
 
-#####################
+# for trial in range(20):
+#     print('Null trial'+str(trial))
 
+#     #null models
+#     source = np.unique(pathway_edges['src'])
+#     source = source[~np.isnan(source)]
+#     dest = np.unique(pathway_edges['dest'])
+#     dest = dest[~np.isnan(dest)]
+#     isolated = np.unique(pathway_edges['other_genes'])
+#     isolated = isolated[~np.isnan(isolated)]
 
-for trial in range(20):
-    print('Null trial'+str(trial))
-
-    #null models
-    source = np.unique(pathway_edges['src'])
-    source = source[~np.isnan(source)]
-    dest = np.unique(pathway_edges['dest'])
-    dest = dest[~np.isnan(dest)]
-    isolated = np.unique(pathway_edges['other_genes'])
-    isolated = isolated[~np.isnan(isolated)]
-
-    #make an empty dataframe using all the eids from pathway_edges
-    str_all_eids = [str(int(eid)) for eid in np.sort(list(set(source).union(set(dest).union(set(isolated)))))]
+#     #make an empty dataframe using all the eids from pathway_edges
+#     str_all_eids = [str(int(eid)) for eid in np.sort(list(set(source).union(set(dest).union(set(isolated)))))]
 
     
-    np.random.seed(trial)
-    null_featureset = np.random.choice(str_all_eids, len(set(featureset_eids).intersection(set(str_all_eids))), replace = False)
-    null_featureset = [str(f) for f in null_featureset]
+#     np.random.seed(trial)
+#     null_featureset = np.random.choice(str_all_eids, len(set(featureset_eids).intersection(set(str_all_eids))), replace = False)
+#     null_featureset = [str(f) for f in null_featureset]
 
-    print('starting degree directed')
-    calc_pathway_scores('degree', False, pathway_edges, null_featureset, directories+'gse73072_directed_degree_null'+str(trial)+'.csv')
+#     print('starting degree directed')
+#     calc_pathway_scores('degree', False, pathway_edges, null_featureset, directories+'gse73072_directed_degree_null'+str(trial)+'.csv')
 
-    print('starting degree undirected')
-    calc_pathway_scores('degree', True, pathway_edges, null_featureset, directories+'gse73072_undirected_degree_null'+str(trial)+'.csv')
+#     print('starting degree undirected')
+#     calc_pathway_scores('degree', True, pathway_edges, null_featureset, directories+'gse73072_undirected_degree_null'+str(trial)+'.csv')
 
-    print('starting page rank undirected')
-    calc_pathway_scores('page_rank', True, pathway_edges, null_featureset, directories+'gse73072_undirected_pagerank_null'+str(trial)+'.csv')
+#     print('starting page rank undirected')
+#     calc_pathway_scores('page_rank', True, pathway_edges, null_featureset, directories+'gse73072_undirected_pagerank_null'+str(trial)+'.csv')

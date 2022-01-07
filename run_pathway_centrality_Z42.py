@@ -166,72 +166,72 @@ def run_test(centrality_measure, similarity, file_name, null = False, seed = 1):
 
 #choose centrality measure
 
-save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_'
+# save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_'
 
-print('heat kernel started')
-run_test(   'degree', 
-            'heatkernel', 
-            save_prefix)
-print('degree heat kernel done')
-
-run_test(   'page_rank', 
-            'heatkernel', 
-            save_prefix)
-print('degree heat kernel done')
-
-save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
-
-print('heat kernel started')
-run_test(   'degree', 
-            'heatkernel', 
-            save_prefix,
-            null = True)
-print('degree heat kernel done')
-
-run_test(   'page_rank', 
-            'heatkernel', 
-            save_prefix,
-            null = True)
-print('degree heat kernel done')
-
-# run_test(   'large_evec', 
+# print('heat kernel started')
+# run_test(   'degree', 
 #             'heatkernel', 
-#             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
-# print('large evec heat kernel done')
+#             save_prefix)
+# print('degree heat kernel done')
 
-save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_'
+# run_test(   'page_rank', 
+#             'heatkernel', 
+#             save_prefix)
+# print('degree heat kernel done')
 
-print('begin correlation')
-run_test(   'degree', 
-            'correlation', 
-            save_prefix)
-print('degree correlation done')
+# save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
 
-run_test(   'page_rank', 
-            'correlation', 
-            save_prefix)
-print('page rank correlation done')
+# print('heat kernel started')
+# run_test(   'degree', 
+#             'heatkernel', 
+#             save_prefix,
+#             null = True)
+# print('degree heat kernel done')
 
-save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
+# run_test(   'page_rank', 
+#             'heatkernel', 
+#             save_prefix,
+#             null = True)
+# print('degree heat kernel done')
 
-run_test(   'degree', 
-            'correlation', 
-            save_prefix,
-            null = True)
-print('degree correlation null done')
+# # run_test(   'large_evec', 
+# #             'heatkernel', 
+# #             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
+# # print('large evec heat kernel done')
 
-run_test(   'page_rank', 
-            'correlation', 
-            save_prefix,
-            null = True)
-print('page rank correlation null done')
+# save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_'
+
+# print('begin correlation')
+# run_test(   'degree', 
+#             'correlation', 
+#             save_prefix)
+# print('degree correlation done')
+
+# run_test(   'page_rank', 
+#             'correlation', 
+#             save_prefix)
+# print('page rank correlation done')
+
+# save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'
+
+# run_test(   'degree', 
+#             'correlation', 
+#             save_prefix,
+#             null = True)
+# print('degree correlation null done')
+
+# run_test(   'page_rank', 
+#             'correlation', 
+#             save_prefix,
+#             null = True)
+# print('page rank correlation null done')
 
 # run_test(   'large_evec', 
 #             'correlation', 
 #             '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z40_pathway_scores_')
 # print('large evec correlation done')
 
-for seed in range(20):
+for seed in range(36,100,1):
     save_prefix = '/home/katrina/a/mankovic/ZOETIS/Fall2021/pathway_ranking/Z42_pathway_scores_null'+str(seed)
 
     run_test(   'degree', 

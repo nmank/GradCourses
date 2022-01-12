@@ -27,6 +27,7 @@ def run_test(centrality_measure, undirected, file_prefix):
     big_pathway_centralities = pandas.DataFrame(columns = all_eids)
 
     for f in os.listdir(base_dir):
+        pid= f.replace("/data3/darpa/omics_databases/ensembl2pathway/pathways_edges/pathways/pw_edge_mtx/pw_mtx_", '').replace('.csv', '')
         x = pandas.read_csv(base_dir + f, index_col = 0)
         gene_cols = []
         eids = []
@@ -49,7 +50,7 @@ def run_test(centrality_measure, undirected, file_prefix):
             A[idx[1],idx[0]] = 1
 
     
-        row = pandas.DataFrame(columns = eids, data = [[0]*len(eids)], index=[f])
+        row = pandas.DataFrame(columns = eids, data = [[0]*len(eids)], index=[pid])
 
         dangle_idx = np.where(np.sum(A, axis = 0) == 0)[0]
         connected_idx = np.where(np.sum(A, axis = 0) != 0)[0]

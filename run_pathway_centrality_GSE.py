@@ -13,6 +13,7 @@ def calc_pathway_scores(centrality_measure, undirected, featureset_eids, outfile
 
 
     for f in os.listdir(base_dir):
+        pid= f.replace("/data3/darpa/omics_databases/ensembl2pathway/pathways_edges/pathways/pw_edge_mtx/pw_mtx_", '').replace('.csv', '')
         x = pandas.read_csv(base_dir + f, index_col = 0)
         gene_cols = []
         eids = []
@@ -46,6 +47,9 @@ def calc_pathway_scores(centrality_measure, undirected, featureset_eids, outfile
             scores[dangle_idx] = 1
 
         max_degree = np.max(np.sum(A,axis = 0))
+        #avoid dividing by 0
+        if max_degree == 0:
+            max_degree = 1
 
         string_eids = [str(node) for node in eids]
 
@@ -55,7 +59,7 @@ def calc_pathway_scores(centrality_measure, undirected, featureset_eids, outfile
 
         pathway_score = np.sum(node_scores)
 
-        pathway_name = f
+        pathway_name = pid
 
         pathway_scores = pathway_scores.append({'pathway_id': pathway_name, 
                                                     'unnormalized': pathway_score, 
@@ -98,23 +102,23 @@ def calc_pathway_scores(centrality_measure, undirected, featureset_eids, outfile
 #####################
 
 #do this only for train_best_probe_ids.csv file
-# featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/2-4hr/train_best_probe_ids.csv', index_col=0)
-# pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
-# featureset_pids = list(featureset.index)
-# featureset_eids = []
-# #load eids from the probeids in the featureset
-# for p in featureset_pids:
-#     if p in list(pid_2_eid['ProbeID']):
-#         featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
-# directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/lfc/'
+featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/0-32hr/train_best_probe_ids_first32.csv', index_col=0)
+pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
+featureset_pids = list(featureset.index)
+featureset_eids = []
+#load eids from the probeids in the featureset
+for p in featureset_pids:
+    if p in list(pid_2_eid['ProbeID']):
+        featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
+directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/0-32hr/lfc/'
 
 #####################
 
 #ssvm features
-featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/2-4hr/ssvm_ranked_features.csv', index_col=0)
-#do this for top 316 ssvm features with frequency greater than 8
-featureset_eids = [str(f) for f in list(featureset.query("Frequency>8").index)]
-directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/ssvm/'
+# featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/0-32hr/ssvm_ranked_features.csv', index_col=0)
+# #do this for top 316 ssvm features with frequency greater than 8
+# featureset_eids = [str(f) for f in list(featureset.query("Frequency>8").index)]
+# directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/0-32hr/ssvm/'
 
 #####################
 

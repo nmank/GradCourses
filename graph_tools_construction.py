@@ -75,52 +75,53 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
                 AdjacencyMatrix[i,j] = np.exp(-(np.linalg.norm( X[:,i]-X[:,j], ord = h_k_ord)**2 )/(2*h_k_param))
                 AdjacencyMatrix[j,i] = AdjacencyMatrix[i,j].copy()
 
-    elif msr == 'parcor':
-        # create linear regression object 
-        reg = linear_model.LinearRegression()
+    #old partial correlation
+    # elif msr == 'parcor':
+    #     # create linear regression object 
+    #     reg = linear_model.LinearRegression()
 
-        vis = list(range(m))
+    #     vis = list(range(m))
 
-        for i in range(m):
-            for j in range(m):
-                if i > j:
+    #     for i in range(m):
+    #         for j in range(m):
+    #             if i > j:
 
-                    #compute projections (aka linear regressions)
-                    vis.remove(i)
-                    vis.remove(j);					
-                    reg.fit(X[:,vis], X[:,i]); 
-                    x_hat_i = reg.predict(X[:,vis])
-                    reg.fit(X[:,vis], X[:,j])
-                    x_hat_j = reg.predict(X[:,vis])
+    #                 #compute projections (aka linear regressions)
+    #                 vis.remove(i)
+    #                 vis.remove(j);					
+    #                 reg.fit(X[:,vis], X[:,i]); 
+    #                 x_hat_i = reg.predict(X[:,vis])
+    #                 reg.fit(X[:,vis], X[:,j])
+    #                 x_hat_j = reg.predict(X[:,vis])
 
-                    #compute residuals
-                    Y_i = X[:,i] - x_hat_i
-                    Y_j = X[:,j] - x_hat_j
+    #                 #compute residuals
+    #                 Y_i = X[:,i] - x_hat_i
+    #                 Y_j = X[:,j] - x_hat_j
 
-                    Y_in = np.linalg.norm(Y_i)
-                    Y_jn = np.linalg.norm(Y_j)
-
-
-                    if Y_in == 0 or Y_jn == 0:	
-                        tmp = 0
-
-                    else:
-                        tmp = np.dot(Y_i, Y_j)/(Y_in*Y_jn)
-                    if negative == True:
-                        PC = tmp
-                    else:
-                        PC = np.abs(tmp)
-                        if epsilon != 0 and PC < epsilon:
-                            #get rid of all edges that have weights less than epsilon
-                            PC = 0
-                    #why are we getting partial correlations of 1?
-                    if PC > 1 and PC < 1.0000001:
-                        PC = 1
+    #                 Y_in = np.linalg.norm(Y_i)
+    #                 Y_jn = np.linalg.norm(Y_j)
 
 
-                    AdjacencyMatrix[i,j] =PC
-                    AdjacencyMatrix[j,i] =PC
-                    vis = list(range(m))
+    #                 if Y_in == 0 or Y_jn == 0:	
+    #                     tmp = 0
+
+    #                 else:
+    #                     tmp = np.dot(Y_i, Y_j)/(Y_in*Y_jn)
+    #                 if negative == True:
+    #                     PC = tmp
+    #                 else:
+    #                     PC = np.abs(tmp)
+    #                     if epsilon != 0 and PC < epsilon:
+    #                         #get rid of all edges that have weights less than epsilon
+    #                         PC = 0
+    #                 #why are we getting partial correlations of 1?
+    #                 if PC > 1 and PC < 1.0000001:
+    #                     PC = 1
+
+
+    #                 AdjacencyMatrix[i,j] =PC
+    #                 AdjacencyMatrix[j,i] =PC
+    #                 vis = list(range(m))
 
     if epsilon > 0:
         AdjacencyMatrix[AdjacencyMatrix < epsilon] = 0

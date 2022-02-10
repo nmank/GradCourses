@@ -102,40 +102,40 @@ def calc_pathway_scores(centrality_measure, undirected, featureset_eids, outfile
 #####################
 
 #do this only for train_best_probe_ids.csv file
-featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/0-32hr/train_best_probe_ids_first32.csv', index_col=0)
-pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
-featureset_pids = list(featureset.index)
-featureset_eids = []
-#load eids from the probeids in the featureset
-for p in featureset_pids:
-    if p in list(pid_2_eid['ProbeID']):
-        featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
-directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/0-32hr/lfc/'
+# featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/2-4hr/train_best_probe_ids.csv', index_col=0)
+# pid_2_eid = pandas.read_csv('/data4/mankovic/GSE73072/probe_2_entrez.csv')
+# featureset_pids = list(featureset.index)
+# featureset_eids = []
+# #load eids from the probeids in the featureset
+# for p in featureset_pids:
+#     if p in list(pid_2_eid['ProbeID']):
+#         featureset_eids.append(str(pid_2_eid[pid_2_eid['ProbeID'] == p]['EntrezID'].item()))
+# directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/lfc/'
 
 #####################
 
 #ssvm features
-# featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/0-32hr/ssvm_ranked_features.csv', index_col=0)
-# #do this for top 316 ssvm features with frequency greater than 8
-# featureset_eids = [str(f) for f in list(featureset.query("Frequency>8").index)]
-# directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/0-32hr/ssvm/'
+featureset = pandas.read_csv('/data4/mankovic/GSE73072/network_centrality/featuresets/2-4hr/ssvm_ranked_features.csv', index_col=0)
+#do this for top 316 ssvm features with frequency greater than 8
+featureset_eids = [str(f) for f in list(featureset.query("Frequency>8").index)]
+directories = '/data4/mankovic/GSE73072/network_centrality/simple_rankings/2-4hr/ssvm/'
 
 #####################
 
-print('starting degree directed')
-calc_pathway_scores('degree', False, featureset_eids, directories+'gse73072_directed_degree.csv')
+# print('starting degree directed')
+# calc_pathway_scores('degree', False, featureset_eids, directories+'gse73072_directed_degree.csv')
 
-print('starting degree undirected')
-calc_pathway_scores('degree', True, featureset_eids, directories+'gse73072_undirected_degree.csv')
+# print('starting degree undirected')
+# calc_pathway_scores('degree', True, featureset_eids, directories+'gse73072_undirected_degree.csv')
 
-print('starting page rank undirected')
-calc_pathway_scores('page_rank', True, featureset_eids, directories+'gse73072_undirected_pagerank.csv')
+# print('starting page rank undirected')
+# calc_pathway_scores('page_rank', True, featureset_eids, directories+'gse73072_undirected_pagerank.csv')
 
 
 # #####################
 
 
-for trial in range(0,100,1):
+for trial in range(100,500,1):
     print('Null trial'+str(trial))
 
     base_dir = '/data3/darpa/omics_databases/ensembl2pathway/pathways_edges/pathways/pw_edge_mtx/'

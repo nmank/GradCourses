@@ -132,6 +132,42 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
     return AdjacencyMatrix
 
 
+
+def zobs(X, class_labels, negative = False):
+    '''
+    A function that builds a zobs matrix where we take z_class0-z_class1
+
+    Nodes are columns of the data matrix X!
+
+    inputs: data matrix 
+                a numpy array with n rows m columns (m data points living in R^n)
+            class_labels
+                a numpy array of class labels that are ints 0s or 1s
+            negative 
+                a boolean to include negative correlations? (default is False)
+    outputs: adjacency matrix
+                    represents a directed weighted graph of the data (dimensions m x m)
+    '''
+    idx_class0 = np.where(class_labels == 0)[0]
+    idx_class1 = np.where(class_labels == 1)[0]
+
+    X_class0 = X[idx_class0,:]
+    X_class1 = X[idx_class1,:]
+
+    r_class0 =  adjacency_matrix(X_class0, msr = 'correlation', negative = True)
+    r_class1 =  adjacency_matrix(X_class1, msr = 'correlation', negative = True)
+
+    z_class0 = np.arctanh(r_class0)
+    z_class1 = np.arctanh(r_class1)
+
+    zobs = (z_class0-z_class1) / np.sqrt( 1/(len(idx_class0)-3) + 1/(len(idx_class0)-3))
+
+    if not negative:
+        zobs = np.abs(zobs)
+
+    return zobs
+
+
 def wgcna(x, beta = 1, den_gen = 'average', threshold = 0, den_fname = 'wgcna_den.png', den_title = 'WGCNA Shedder Data at 60 Hours After Infection', tom = True):
     '''
     Basic WGCNA implementation	

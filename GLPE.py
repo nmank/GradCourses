@@ -249,10 +249,28 @@ class CLPE(GLPE):
         return self
 
     def pathway_centrality_score(self, idxs = None):
-        return np.sum(self.pathway_transition_matrix_[:,idxs], axis = 1)
+        '''
+        Generates a simple pathway centrality score
+
+        Inputs:
+            idxs (numpy array): the columns in X that are in the featureset
+        Outputs:
+            scores (numpy array): the centrality scores for each pathway
+        '''
+        scores = np.sum(self.pathway_transition_matrix_[:,idxs], axis = 1)
+        return scores
     
     def simple_transform(self, featureset_transition_matrix_ids = None, n_null_trials = 10):
+        '''
+        Generates simple centrality scores for each pathway given a featureset (featureset_transition_matrix_ids)
+        along with a p-value of each pathway (low p is good)
 
+        Inputs:
+            featureset_transition_matrix_ids (numpy array): the columns in X that are in the featureset
+            n_null_trials (int): the number of null trials to generate the p value
+        Outputs:
+            scores_and_p (pandas.DataFrame): the centrality scores for each pathway along with their respective p values
+        '''
         #calc centrality scores
         scores = self.pathway_centrality_score(featureset_transition_matrix_ids)
 

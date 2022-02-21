@@ -105,13 +105,15 @@ class CLPE(GLPE):
                 centrality_measure: str = None, 
                 network_type: str = None,
                 incidence_matrix: ndarray = None,
-                heat_kernel_param: float = 2):
+                heat_kernel_param: float = 2,
+                normalize_rows: bool = True):
 
          # set params
         self.centrality_measure_ = str(centrality_measure)
         self.network_type_ = str(network_type)
         self.incidence_matrix_ = np.array(incidence_matrix)
         self.heat_kernel_param_ = float(heat_kernel_param)
+        self.normalize_rows_ = float(normalize_rows)
         self.pathway_names_ = []
     
     @property
@@ -133,6 +135,10 @@ class CLPE(GLPE):
     @property
     def pathway_names(self):
         return self.pathway_names_
+
+    @property
+    def normalize_rows(self):
+        return self.normalize_rows_
 
 
     def generate_adjacency_matrix(self, X = None, pathway_name = None):
@@ -183,9 +189,6 @@ class CLPE(GLPE):
             #generate adjacency matrix
             A = gt.adjacency_matrix(pathway_data, self.network_type_, h_k_param = self.heat_kernel_param_)
 
-
-        
-
         return A, feature_idx
 
 
@@ -205,7 +208,7 @@ class CLPE(GLPE):
             self.feature_names_ = np.unique(self.incidence_matrix_[:, :2])
             self.pathway_names_ = np.unique(self.incidence_matrix_[:, 3])
         else:
-            self.feature_names_ = np.unique(self.incidence_matrix_[:, :1])
+            self.feature_names_ = np.unique(list(range(X.shape[1])))
             self.pathway_names_ = np.unique(self.incidence_matrix_[:,1])
             
 
@@ -228,11 +231,11 @@ class CLPE(GLPE):
                 scores = scores / np.max(degrees)
 
             #normalize centrality score by l1 norm
-            scores = scores/np.sum(scores)
+            if self.normalize_rows:
+                scores = scores/np.sum(scores)
 
             #add feature scores to row for pathway_transition matrix
             score_row = np.zeros(n_features)
-   
             score_row[feature_idx] = scores
 
             #add to pathway_transition_matrix
@@ -245,6 +248,39 @@ class CLPE(GLPE):
 
         return self
 
+    def pathway_centrality_score(self, idxs = None):
+        return np.sum(self.pathway_transition_matrix_[:,idxs], axis = 1)
+    
+    def simple_transform(self, featureset_transition_matrix_ids = None, n_null_trials = 10):
+
+        #calc centrality scores
+        scores = self.pathway_centrality_score(featureset_transition_matrix_ids)
+
+        null_scores = []
+        for seed in range(n_null_trials):
+            np.random.seed(seed)
+            null_featureset_ids = np.random.choice(self.feature_names_, len(featureset_transition_matrix_ids), replace = False)
+            null_featureset_transition_matrix_ids = np.nonzero(np.in1d(self.feature_names_,np.array(null_featureset_ids)))[0]
+            null_scores.append(self.pathway_centrality_score(null_featureset_transition_matrix_ids))
+            if seed %10 == 0:
+                print('null trial '+str(seed)+' done')
+
+        null_array = np.vstack(null_scores)
+
+        bigger_genes = np.zeros(null_array.shape)
+        for i in range(n_null_trials):
+            idx = np.where(scores < null_array[i,:])
+            bigger_genes[i, idx] = 1
+            
+        p_val = np.mean(bigger_genes, axis = 0)
+
+        scores_and_p = pandas.DataFrame(columns = ['pathway','score', 'p_val'])
+        scores_and_p['pathway'] = self.pathway_names_
+        scores_and_p['score'] = scores
+        scores_and_p['p_val'] = p_val
+        
+
+        return scores_and_p
 
 
     

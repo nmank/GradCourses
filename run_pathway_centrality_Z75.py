@@ -17,6 +17,9 @@ from orthrus.core.helper import load_object
 from sklearn.preprocessing import StandardScaler
 import os
 
+
+##NEED TO RERUN!
+
 '''
 By Nate Mankovich 
 
@@ -46,7 +49,7 @@ def run_test(centrality_measure, similarity, file_name, null = False, seed = 1):
     feature_ids = dataset.load_dataset('/data4/sharmak/zoetis/nate/z75_ssvm_feature_set_no_partitioning.pickle')
     featureset_randIDs= list(feature_ids.index)
 
-    Z75_dataset = ds.slice_dataset(sample_ids=sample_ids, feature_ids=featureset_randIDs)
+    Z75_dataset = ds.slice_dataset(sample_ids=sample_ids)
 
 
     preprocessing_transform = make_pipeline(HalfMinimum(missing_values=0), FunctionTransformer(np.log2), StandardScaler())
@@ -59,7 +62,7 @@ def run_test(centrality_measure, similarity, file_name, null = False, seed = 1):
         np.random.seed(seed)
         featureset_randIDs = np.random.choice(all_randIDs, len(featureset_randIDs), replace = False)
 
-    #which genes are in which pathways
+    #which genes are in which pathways  
     pathway_data = pandas.read_csv('/data4/mankovic/ZOETIS/felis_catus_pathways.csv')
     pathway_data = pathway_data.fillna(0)
     pathway_data= pathway_data.rename(columns={"Unnamed: 0": "RandID"})
@@ -110,7 +113,7 @@ def run_test(centrality_measure, similarity, file_name, null = False, seed = 1):
                 # X = np.vstack(one_pathway_data).T
 
                 #adjacency matrix
-                A = gt.adjacency_matrix(X, similarity, h_k_param=300)
+                A = gt.adjacency_matrix(X, similarity, h_k_param=300, epsilon = .3)
 
                 #average degree
                 degrees = np.sum(A,axis = 0)
@@ -132,7 +135,7 @@ def run_test(centrality_measure, similarity, file_name, null = False, seed = 1):
 
                     #pathway score as sum of node scores 
                     pathway_score = np.sum(node_scores)
-
+                    
                     #degrees
                     degrees = np.sum(A,axis = 0)
 
@@ -157,21 +160,22 @@ def run_test(centrality_measure, similarity, file_name, null = False, seed = 1):
 
 #choose centrality measure
 
-save_prefix = '/data4/mankovic/ZOETIS/pathway_ranking/Z75/pathway_scores/Z75_pathway_scores_'
+# save_prefix = '/data4/mankovic/ZOETIS/pathway_ranking/Z75/pathway_scores/Z75_pathway_scores_'
 
-print('heat kernel started')
-run_test(   'degree', 
-            'heatkernel', 
-            save_prefix)
-print('degree heat kernel done')
+# print('heat kernel started')
+# run_test(   'degree', 
+#             'heatkernel', 
+#             save_prefix)
+# print('degree heat kernel done')
 
-run_test(   'page_rank', 
-            'heatkernel', 
-            save_prefix)
-print('degree heat kernel done')
+# run_test(   'page_rank', 
+#             'heatkernel', 
+#             save_prefix)
+# print('degree heat kernel done')
 
 
-save_prefix = '/data4/mankovic/ZOETIS/pathway_ranking/Z75/pathway_scores/Z75_pathway_scores_'
+# save_prefix = '/data4/mankovic/ZOETIS/pathway_ranking/Z75/pathway_scores/Z75_pathway_scores_'
+save_prefix = './'
 
 print('begin correlation')
 run_test(   'degree', 
@@ -185,33 +189,33 @@ run_test(   'page_rank',
 print('page rank correlation done')
 
 
-for seed in range(500):
-    save_prefix = '/data4/mankovic/ZOETIS/pathway_ranking/Z75/pathway_scores/Z75_pathway_scores_null'+str(seed)
+# for seed in range(500):
+#     save_prefix = '/data4/mankovic/ZOETIS/pathway_ranking/Z75/pathway_scores/Z75_pathway_scores_null'+str(seed)
 
-    run_test(   'degree', 
-                'correlation', 
-                save_prefix,
-                null = True,
-                seed = seed)
-    print('degree heat kernel done')
+#     run_test(   'degree', 
+#                 'correlation', 
+#                 save_prefix,
+#                 null = True,
+#                 seed = seed)
+#     print('degree heat kernel done')
 
-    run_test(   'page_rank', 
-                'correlation', 
-                save_prefix,
-                null = True,
-                seed = seed)
-    print('degree heat kernel done')
+#     run_test(   'page_rank', 
+#                 'correlation', 
+#                 save_prefix,
+#                 null = True,
+#                 seed = seed)
+#     print('degree heat kernel done')
 
-    run_test(   'degree', 
-                'heatkernel', 
-                save_prefix,
-                null = True,
-                seed = seed)
-    print('degree heat kernel done')
+#     run_test(   'degree', 
+#                 'heatkernel', 
+#                 save_prefix,
+#                 null = True,
+#                 seed = seed)
+#     print('degree heat kernel done')
 
-    run_test(   'page_rank', 
-                'heatkernel', 
-                save_prefix,
-                null = True,
-                seed =seed)
-    print('degree heat kernel done')
+#     run_test(   'page_rank', 
+#                 'heatkernel', 
+#                 save_prefix,
+#                 null = True,
+#                 seed =seed)
+#     print('degree heat kernel done')

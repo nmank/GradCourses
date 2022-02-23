@@ -54,16 +54,16 @@ for centrality_type, similarity in different_types:
                     similarity,
                     better_pathway_data, 
                     heat_kernel_param = 100,
-                    normalize_rows = False)
+                    normalize_rows = True)
     clpe.fit(np.array(Z75_data))
 
     pathway_transition_matrix = pandas.DataFrame(data = clpe.pathway_transition_matrix_,
                                                 index = clpe.pathway_names_, 
                                                 columns = list(Z75_data.columns))
 
-    pathway_transition_matrix.to_csv('/data4/mankovic/ZOETIS/pathway_ranking/Z75/fixed/Z75_pathway_matrix_'+similarity+'_'+centrality_type+'.csv')
+    pathway_transition_matrix.to_csv('/data4/mankovic/ZOETIS/pathway_ranking/Z75/Z75_pathway_matrix_'+similarity+'_'+centrality_type+'.csv')
 
-
+    print(centrality_type+' '+similarity+' done!')
 
     
 

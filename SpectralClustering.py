@@ -78,8 +78,11 @@ class SpectralClustering(BaseEstimator):
 
 
         keep_cutting = True
+
         best_bsrs = []
-        best_bsr = 0
+        best_bsr = self.test_cut_loso(X, y)
+        best_bsrs.append(best_bsr)
+
         current_idx = np.arange(self.A_.shape[0])
 
         cut_num = 0

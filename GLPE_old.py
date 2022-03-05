@@ -8,7 +8,6 @@ from matplotlib import pyplot as plt
 import graph_tools_construction as gt
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-import os
 
 
 
@@ -89,9 +88,15 @@ class CLPE(GLPE):
             network_type (string)
                                 The type of network to be used.
                                 Options are: 'precomputed', 'correlation', 'heatkernel'
-            pathway_files: (string)
-                                File path for .csv of matrices for each pathway 
-                                
+            incidence matrix: (numpy array)
+                                if netwok_type is precomputed it must have the following columns:
+                                    column 0 is the source index which corresponds to column of X
+                                    column 1 is the destination index which corresponds to column of X
+                                    column 2 is a string 'directed' for a directed edge and 'undireced' for an undirected edge
+                                    column 3 is the pathway_id
+                                if network type is not precomputed is must have the follwoing columns:
+                                    column 0 corresponds to column of X
+                                    column 1 is the pathway_id
             heat_kernel_param: (float)
                                 the heat for the heat kernel colculation if network type is heatkernel
             
@@ -99,18 +104,14 @@ class CLPE(GLPE):
     def __init__(self, 
                 centrality_measure: str = None, 
                 network_type: str = None,
-                feature_ids: list = None,
-                pathway_files: str = None,
-                directed: bool = False,
+                incidence_matrix: ndarray = None,
                 heat_kernel_param: float = 2,
                 normalize_rows: bool = True):
 
          # set params
         self.centrality_measure_ = str(centrality_measure)
         self.network_type_ = str(network_type)
-        self.feature_ids_ = list(feature_ids)
-        self.pathway_files_ = str(pathway_files)
-        self.directed_ = bool(directed)
+        self.incidence_matrix_ = np.array(incidence_matrix)
         self.heat_kernel_param_ = float(heat_kernel_param)
         self.normalize_rows_ = float(normalize_rows)
         self.pathway_names_ = []
@@ -122,17 +123,10 @@ class CLPE(GLPE):
     @property
     def network_type(self):
         return self.network_type_
-    
-    def feature_ids(self):
-        return self.feature_ids_
 
     @property
-    def pathway_files(self):
-        return self.pathway_files_
-
-    @property
-    def undirected(self):
-        return self.undirected_
+    def incidence_matrix(self):
+        return self.incidence_matrix_
 
     @property
     def heat_kernel_param(self):
@@ -147,7 +141,7 @@ class CLPE(GLPE):
         return self.normalize_rows_
 
 
-    def generate_adjacency_matrix(self, X = None, f = None):
+    def generate_adjacency_matrix(self, X = None, pathway_name = None):
         '''
         Generates a feature adjacency matrix.
         If network_type is precomputed then we uses the incidence matrix.
@@ -156,30 +150,46 @@ class CLPE(GLPE):
 
         Inputs:
             X (numpy array): A data matrix. (subject x features)
-            f (string): The identifier for the pathway. In incidence_matrix.
+            pathway_name (string): The identifier for the pathway. In incidence_matrix.
         Outputs:
             A (numpy array): (features in pathway) x (features in pathway) adjacency matrix
-            feature_idx (numpy array): the labels of the features in the adjacency matrix
+            feature_idx (numpy array): the index in X of the features in the adjacency matrix
         '''
         
-        x = pandas.read_csv(self.pathway_files_ + f, index_col = 0)
-
-        feature_names = list(x.columns)
-
         if self.network_type_ == 'precomputed':
+
+            #get incidence matrix for this pathway
+            edge_idx = np.where(self.incidence_matrix_[:,3] == pathway_name)[0]
+            pathway_incidence = self.incidence_matrix_[edge_idx,:3]
             
-            A = np.array(x)
+            #features in this pathway
+            feature_idx = np.unique(pathway_incidence[:,:2])
+            n_nodes = len(feature_idx)
+
+            A = np.zeros((n_nodes, n_nodes))
+
+            for row in pathway_incidence:
+                i = np.where(feature_idx == row[0])[0][0]
+                j = np.where(feature_idx == row[1])[0][0]
+                A[i, j] = 1
+                if row[2] == 'undirected':
+                    A[j, i] = A[i, j].copy()
+            feature_idx = np.array(feature_idx).astype(int)
 
         else:
+            #feature_ids in the pathway
+            idx = np.where(self.incidence_matrix_[:,1] == pathway_name)[0]
+            feature_idx = self.incidence_matrix_[idx,0]
+
+            feature_idx = np.array(feature_idx).astype(int)
             
             #data matrix for features in one pathway (subjects x features)
-            feature_indices = [self.feature_ids_.index(i) for i in feature_names]
-            pathway_data =  X[:,feature_indices]
+            pathway_data =  X[:,feature_idx]
 
             #generate adjacency matrix
-            A = gt.adjacency_matrix(np.array(pathway_data), self.network_type_, h_k_param = self.heat_kernel_param_)
+            A = gt.adjacency_matrix(pathway_data, self.network_type_, h_k_param = self.heat_kernel_param_)
 
-        return A, feature_names
+        return A, feature_idx
 
 
 
@@ -189,25 +199,28 @@ class CLPE(GLPE):
         Generates a pathway transition matrix using network centrality.
 
         Inputs:
-            X (pandas DataFrame): a data matrix that is (subject x features)
+            X (numpy array): a data matrix that is (subject x features)
         '''
 
         X = check_array(X)
+
+        if self.network_type_ == 'precomputed':
+            self.feature_names_ = np.unique(self.incidence_matrix_[:, :2])
+            self.pathway_names_ = np.unique(self.incidence_matrix_[:, 3])
+        else:
+            self.feature_names_ = np.unique(list(range(X.shape[1])))
+            self.pathway_names_ = np.unique(self.incidence_matrix_[:,1])
+            
 
         n_features = len(self.feature_names_)
 
         self.pathway_transition_matrix_ = []
 
         #define pathway names
-        for f in os.listdir(self.pathway_files_):
-
-            start = f.find("R-HSA")
-            end = f.find(".csv")
-
-            pathway_name = f[start:end]
+        for pathway_name in self.pathway_names_:
     
             #adjacency matrix
-            A, feature_idx = self.generate_adjacency_matrix(X, f)
+            A, feature_idx = self.generate_adjacency_matrix(X, pathway_name)
 
             #centrality scores
             scores = gt.centrality_scores(A, self.centrality_measure_)
@@ -227,8 +240,6 @@ class CLPE(GLPE):
 
             #add to pathway_transition_matrix
             self.pathway_transition_matrix_.append(score_row)
-
-            self.pathway_names_.append(pathway_name)
         
         self.pathway_transition_matrix_ = np.vstack(self.pathway_transition_matrix_)
 

@@ -893,7 +893,7 @@ def supra_adjacency(dataset, time_weight = 'mean', msr = 'parcor', epsilon = 0, 
 
 
 
-def centrality_scores(A, centrality = 'large_evec'):
+def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85):
     '''
     A method for computing the centrality of the nodes in a network
 
@@ -908,6 +908,7 @@ def centrality_scores(A, centrality = 'large_evec'):
                          'largest_evec'
                          'page_rank'
                          'degree'
+        pagerank_d - float, parameter for pagerank 
     Outputs:
         scores - a numpy array of the centrality scores for the nodes in the network
                  index in scores corresponds to index in A
@@ -932,28 +933,20 @@ def centrality_scores(A, centrality = 'large_evec'):
         if n == 1:
             scores = np.array([0])
         else:
+            connected_idx = np.where(np.sum(A, axis = 0) != 0)[0]
+            n = len(connected_idx)
             M = np.zeros((n,n))
             for i in range(n): 
-                A_sum = np.sum(A[:,i])
+                ii = connected_idx[i]
+                A_sum = np.sum(A[connected_idx,ii])
                 if A_sum == 0:
-                    M[:,i] = A[:,i]
+                    M[:,i] = A[connected_idx,ii]
                     print('dangling nodes for page rank')
                 else:
-                    M[:,i] = A[:,i]/A_sum
+                    M[:,i] = A[connected_idx,ii]/A_sum
 
             #taken from da wikipedia
             eps = 0.001
-            d = 0.85
-
-            #old and slow
-            # v = np.random.rand(n, 1)
-            # v = v / np.linalg.norm(v, 1)
-            # last_v = np.ones((n, 1), dtype=np.float32) * 100
-            # M_hat = (d * M) + (((1 - d) / n) * np.ones((n,n), dtype=np.float32))
-
-            # while np.linalg.norm(v - last_v, 2) > eps:
-            #     last_v = v
-            #     v = M_hat @ v
 
             #new and fast
             v = np.random.rand(n, 1)
@@ -961,10 +954,17 @@ def centrality_scores(A, centrality = 'large_evec'):
             err = 1
             while err > eps:
                 v0 = v.copy()
-                v = (d * M) @ v0 + (1 - d) / n
+                v = (pagerank_d * M) @ v0 + (1 - pagerank_d) / n
                 err = np.linalg.norm(v - v0, 2)
                 
-            scores = v.flatten()
+            connected_scores = v.flatten()
+
+            if n != A.shape[0]:
+                scores = np.zeros(A.shape[0])
+                scores[connected_idx] = connected_scores
+
+
+
         
     else:
         print('centrality type not recognized')

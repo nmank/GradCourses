@@ -148,7 +148,7 @@ class CLPE(GLPE):
         return self.normalize_rows_
 
 
-    def generate_adjacency_matrix(self, X = None, f = None, from_file = True):
+    def generate_adjacency_matrix(self, X = None, f = None):
         '''
         Generates a feature adjacency matrix.
         If network_type is precomputed then we uses the incidence matrix.
@@ -157,33 +157,56 @@ class CLPE(GLPE):
 
         Inputs:
             X (numpy array): A data matrix. (subject x features)
-            f (string): The identifier for the pathway. In incidence_matrix.
+            f (string or ): Either 1) A file path for precomputed pathway matrix with row and column labels 
+                                    as feature names. 1 for directed edge and 2 for undirected edge.
+                                   2) A list of feature names in the pathway.
         Outputs:
             A (numpy array): (features in pathway) x (features in pathway) adjacency matrix
-            feature_idx (numpy array): the labels of the features in the adjacency matrix
+            restricted_feature_names (numpy array): the labels of the features in the adjacency matrix
         '''
-        
-        if from_file:
-            x = pandas.read_csv(self.pathway_files_ + f, index_col = 0)
 
+        def restrict_feat_names(feature_names):
+            #restrict pathway feature names to those in the dataset (X)
+            restricted_feature_names = list(set(self.feature_ids_).intersection(set(feature_names)))
+            restricted_idx = np.array([feature_names.index(i) for i in restricted_feature_names])
+            return restricted_feature_names, restricted_idx
+        
+        #if there's a file for each pathway
+        if isinstance(f, str):
+
+            #read the csv and take the feature ids of the pathway to be the part of the string after the '_'
+            x = pandas.read_csv(self.pathway_files_ + f, index_col = 0)
             feature_names = list(x.columns)
             feature_names = [e.partition("_")[2] for e in feature_names] #feature names after underscore
 
-            restricted_feature_names = list(set(self.feature_ids_).intersection(set(feature_names)))
-            idx = np.array([feature_names.index(i) for i in restricted_feature_names])
+            #restrict the features in the pathway to the features in the dataset
+            restricted_feature_names, restricted_idx = restrict_feat_names(feature_names)
 
-            if len(idx) > 0:
+            #verify that there is at least one feature in the pathway and the dataset
+            if len(restricted_idx) > 0:
 
                 if self.network_type_ == 'precomputed':
                     
+                    #load the adjacency matrix
                     A = np.array(x)
                     
-                    A = A[:,idx][idx,:]
+                    #restrict adjacency matrix to restricted_feature_names
+                    A = A[:,restricted_idx][restricted_idx,:]
+
+                    #undirected edges are 2 and directed edges are 1
+                    #make the undirected edges into 1s in the adjacency matrix
+                    undirected_idx = np.where(A == 2)
+                    A[undirected_idx] = 1
+                    A[undirected_idx[1],undirected_idx[0]] = 1
+
+                    #make sure the network is undirected if needed
+                    if not self.directed_:
+                        A[A != A] = 0
 
                 else:
 
                     #data matrix for features in one pathway (subjects x features)
-                    pathway_data =  X[:,idx]
+                    pathway_data =  X[:,restricted_idx]
 
                     #generate adjacency matrix
                     A = gt.adjacency_matrix(np.array(pathway_data), self.network_type_, h_k_param = self.heat_kernel_param_)
@@ -191,13 +214,15 @@ class CLPE(GLPE):
                 A = None    
 
         else:
+            #feature names are f
             feature_names = f
+            
+            #restrict features in pathway to those in the dataset
+            restricted_feature_names, restricted_idx = restrict_feat_names(feature_names)
 
-            restricted_feature_names = list(set(self.feature_ids_).intersection(set(feature_names)))
-            idx = np.array([self.feature_ids_.index(i) for i in restricted_feature_names])
-
-            if len(idx) > 0:
-                pathway_data =  X[:,idx]
+            if len(restricted_idx) > 0:
+                #restrict the pathway data
+                pathway_data =  X[:,restricted_idx]
 
                 #generate adjacency matrix
                 A = gt.adjacency_matrix(np.array(pathway_data), self.network_type_, h_k_param = self.heat_kernel_param_)
@@ -206,6 +231,39 @@ class CLPE(GLPE):
 
         return A, restricted_feature_names
 
+
+    def score_the_row(self, A, n_features_X, feature_idx):
+        '''
+        A function that calculates the score of a row.
+
+        Inputs:
+            A (numpy array) adjacency matrix
+            n_features_X (int) number of features in X
+            feature_idx (list) the list of ids of the features in the pathway
+        Outputs:
+            score_row (numpy array) the pathway score of all the features in 
+                                    X based on their centrality in the pathway
+        '''
+        score_row = np.zeros(n_features_X)
+
+        if len(feature_idx) > 0:
+            #centrality scores
+            scores = gt.centrality_scores(A, self.centrality_measure_)
+
+            #normalize degree centrality by maximum degree
+            if self.centrality_measure_ == 'degree':
+                degrees = np.sum(A,axis = 0)
+                scores = scores / np.max(degrees)
+
+            #normalize centrality score by l1 norm
+            if self.normalize_rows:
+                scores = scores/np.sum(scores)
+
+            #add feature scores to row for pathway_transition matrix
+            idx = np.array([self.feature_ids_.index(i) for i in feature_idx])
+            score_row[idx] = scores
+
+        return score_row
 
 
     #overrides glpe method
@@ -217,40 +275,48 @@ class CLPE(GLPE):
             X (pandas DataFrame): a data matrix that is (subject x features)
         '''
 
+        #verify X is a numpy array
         X = check_array(X)
 
+        #number of features in X
         n_features = len(self.feature_ids_)
 
+        #pathway transition matrix initialization
         self.pathway_transition_matrix_ = []
 
+
         if os.path.isfile(self.pathway_files_):
+            #if the pathway data is in one file
+            #then it should be indexed by first column (pathway names)
+            #rest of columns should be feature names for the pathway
+            #1 if feature is in the pathway
+            #0 otherwise
 
-            #THIS NEEDS TO BE FIXED
-
-            pathway_data = pandas.read_csv(self.pathway_files_, index_col = 'ReactomeID')
+            pathway_data = pandas.read_csv(self.pathway_files_, index_col = 0)
             pathway_data = pathway_data.fillna(0)
             
             self.pathway_names_ = []
             for pathway_name, row in pathway_data.iterrows():
 
+                #features in the pathway
                 entries = row.values
-                features_in_pathway = row.index[entries != 0] 
+                features_in_pathway = list(row.index[entries != 0])
 
-                A, feature_idx = self.generate_adjacency_matrix(X, features_in_pathway, from_file = False)
+                #generate feature matrix
+                A, feature_idx = self.generate_adjacency_matrix(X, features_in_pathway)
 
-                #FIX HERE!
+                #calculate the score of the row
+                score_row = self.score_the_row(A, len(self.feature_ids_), feature_idx)
 
-                row = list(scores)
+                #add score_row to pathway_data
+                self.pathway_transition_matrix_.append(score_row)
 
-                pathway_data[pathway_name] = row
-
+                #keep track of pathway names
                 self.pathway_names_.append(pathway_name)
-            
-            self.pathway_transition_matrix_  = np.array(pathway_data)
 
 
 
-        else:
+        elif os.path.isdir(self.pathway_files_):
             self.pathway_names_ = []
             #define pathway names
             for f in os.listdir(self.pathway_files_):
@@ -263,31 +329,21 @@ class CLPE(GLPE):
                 #adjacency matrix
                 A, feature_idx = self.generate_adjacency_matrix(X, f)
 
-                score_row = np.zeros(n_features)
-
-                if len(feature_idx) > 0:
-                    #centrality scores
-                    scores = gt.centrality_scores(A, self.centrality_measure_)
-
-                    #normalize degree centrality by maximum degree
-                    if self.centrality_measure_ == 'degree':
-                        degrees = np.sum(A,axis = 0)
-                        scores = scores / np.max(degrees)
-
-                    #normalize centrality score by l1 norm
-                    if self.normalize_rows:
-                        scores = scores/np.sum(scores)
-
-                    #add feature scores to row for pathway_transition matrix
-                    idx = np.array([self.feature_ids_.index(i) for i in feature_idx])
-                    score_row[idx] = scores
+                #calculate the score of the row
+                score_row = self.score_the_row(A, n_features, feature_idx)
 
                 #add to pathway_transition_matrix
                 self.pathway_transition_matrix_.append(score_row)
 
+                #keep track of pathway names
                 self.pathway_names_.append(pathway_name)
         
-            self.pathway_transition_matrix_ = np.vstack(self.pathway_transition_matrix_)
+        
+        else:
+            print('pathway_files must be a file or directory path')
+        
+        #make pathway transition matrix
+        self.pathway_transition_matrix_ = np.vstack(self.pathway_transition_matrix_)
 
         # replace na with 0
         np.nan_to_num(self.pathway_transition_matrix_, copy=False)
@@ -303,31 +359,35 @@ class CLPE(GLPE):
         Outputs:
             scores (numpy array): the centrality scores for each pathway
         '''
+
         scores = np.sum(self.pathway_transition_matrix_[:,idxs], axis = 1)
+
         return scores
     
-    def simple_transform(self, featureset_transition_matrix_ids = None, n_null_trials = 10):
+    def simple_transform(self, featureset_names = None, n_null_trials = 10):
         '''
         Generates simple centrality scores for each pathway given a featureset (featureset_transition_matrix_ids)
         along with a p-value of each pathway (low p is good)
 
         Inputs:
-            featureset_transition_matrix_ids (numpy array): the columns in X that are in the featureset
+            featureset_names (numpy array): names of the features in the featureset
             n_null_trials (int): the number of null trials to generate the p value
         Outputs:
             scores_and_p (pandas.DataFrame): the centrality scores for each pathway along with their respective p values
         '''
         #calc centrality scores
-        scores = self.pathway_centrality_score(featureset_transition_matrix_ids)
+        featureset_transition_idx = [self.feature_ids_.index(i) for i in featureset_names]
+
+        scores = self.pathway_centrality_score(featureset_transition_idx)
 
         null_scores = []
         for seed in range(n_null_trials):
             np.random.seed(seed)
-            null_featureset_ids = np.random.choice(self.feature_names_, len(featureset_transition_matrix_ids), replace = False)
-            null_featureset_transition_matrix_ids = np.nonzero(np.in1d(self.feature_names_,np.array(null_featureset_ids)))[0]
-            null_scores.append(self.pathway_centrality_score(null_featureset_transition_matrix_ids))
-            if seed %10 == 0:
-                print('null trial '+str(seed)+' done')
+            null_featureset_ids = np.random.choice(self.feature_ids_, len(featureset_names), replace = False)
+            null_featureset_transition_idx = [self.feature_ids_.index(i) for i in null_featureset_ids]
+            null_scores.append(self.pathway_centrality_score(null_featureset_transition_idx))
+            # if seed %10 == 0:
+            #     print('null trial '+str(seed)+' done')
 
         null_array = np.vstack(null_scores)
 

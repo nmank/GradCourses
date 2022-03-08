@@ -101,7 +101,7 @@ class CLPE(GLPE):
                 network_type: str = None,
                 feature_ids: list = None,
                 pathway_files: str = None,
-                directed: bool = False,
+                directed: bool = None,
                 heat_kernel_param: float = 2,
                 normalize_rows: bool = True):
 
@@ -176,6 +176,8 @@ class CLPE(GLPE):
 
             #read the csv and take the feature ids of the pathway to be the part of the string after the '_'
             x = pandas.read_csv(self.pathway_files_ + f, index_col = 0)
+            x = x.fillna(0)
+
             feature_names = list(x.columns)
             if len(feature_names) > 0:
                 if 'entrez' in feature_names[0]:
@@ -204,7 +206,7 @@ class CLPE(GLPE):
 
                     #make sure the network is undirected if needed
                     if not self.directed_:
-                        A[A != A] = 0
+                        A[A != A.T] = 0
 
                 else:
 

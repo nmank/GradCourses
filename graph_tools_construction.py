@@ -933,7 +933,9 @@ def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85):
         if n == 1:
             scores = np.array([0])
         else:
-            connected_idx = np.where(np.sum(A, axis = 0) != 0)[0]
+            connected_idx_in = np.where(np.sum(A, axis = 0) != 0)[0]
+            connected_idx_out = np.where(np.sum(A, axis = 1) != 0)[0]
+            connected_idx = np.union1d(connected_idx_in, connected_idx_out)
             connected_A = A[:,connected_idx][connected_idx,:]
             n = len(connected_idx)
             if n <= 1:

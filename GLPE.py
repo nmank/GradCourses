@@ -177,7 +177,10 @@ class CLPE(GLPE):
             #read the csv and take the feature ids of the pathway to be the part of the string after the '_'
             x = pandas.read_csv(self.pathway_files_ + f, index_col = 0)
             feature_names = list(x.columns)
-            feature_names = [e.partition("_")[2] for e in feature_names] #feature names after underscore
+            if len(feature_names) > 0:
+                if 'entrez' in feature_names[0]:
+                    feature_names = [e.partition("_")[2] for e in feature_names] #feature names after underscore
+
 
             #restrict the features in the pathway to the features in the dataset
             restricted_feature_names, restricted_idx = restrict_feat_names(feature_names)
@@ -325,7 +328,8 @@ class CLPE(GLPE):
                 end = f.find(".csv")
 
                 pathway_name = f[start:end]
-        
+
+
                 #adjacency matrix
                 A, feature_idx = self.generate_adjacency_matrix(X, f)
 

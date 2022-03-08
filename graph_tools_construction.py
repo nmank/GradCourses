@@ -934,35 +934,36 @@ def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85):
             scores = np.array([0])
         else:
             connected_idx = np.where(np.sum(A, axis = 0) != 0)[0]
+            connected_A = A[:,connected_idx][connected_idx,:]
             n = len(connected_idx)
-            M = np.zeros((n,n))
-            for i in range(n): 
-                ii = connected_idx[i]
-                A_sum = np.sum(A[connected_idx,ii])
-                if A_sum == 0:
-                    M[:,i] = A[connected_idx,ii]
-                    print('dangling nodes for page rank')
-                else:
-                    M[:,i] = A[connected_idx,ii]/A_sum
+            if n <= 1:
+                scores = np.array([0])
+            else:
+                M = np.zeros((n,n))
+                for i in range(n): 
+                    A_sum = np.sum(connected_A[:,i])
+                    if A_sum == 0:
+                        M[:,i] = connected_A[:,i]
+                        # print('dangling nodes for page rank')
+                    else:
+                        M[:,i] = connected_A[:,i]/A_sum
 
-            #taken from da wikipedia
-            eps = 0.001
+                #taken from da wikipedia
+                eps = 0.001
 
-            #new and fast
-            v = np.random.rand(n, 1)
-            v = v / np.linalg.norm(v, 1)
-            err = 1
-            while err > eps:
-                v0 = v.copy()
-                v = (pagerank_d * M) @ v0 + (1 - pagerank_d) / n
-                err = np.linalg.norm(v - v0, 2)
-                
-            connected_scores = v.flatten()
+                #new and fast
+                v = np.random.rand(n, 1)
+                v = v / np.linalg.norm(v, 1)
+                err = 1
+                while err > eps:
+                    v0 = v.copy()
+                    v = (pagerank_d * M) @ v0 + (1 - pagerank_d) / n
+                    err = np.linalg.norm(v - v0, 2)
+                    
+                connected_scores = v.flatten()
 
-            if n != A.shape[0]:
                 scores = np.zeros(A.shape[0])
                 scores[connected_idx] = connected_scores
-
 
 
         

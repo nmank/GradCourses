@@ -25,7 +25,7 @@ class GLPE(BaseEstimator):
     def __init__(self, pathway_transition_matrix: ndarray = None):
         # set params
         self.pathway_transition_matrix_ = np.array(pathway_transition_matrix)
-        self.feature_names_ = None
+        # self.feature_names_ = None
 
     @property
     def pathway_transition_matrix(self):
@@ -38,13 +38,15 @@ class GLPE(BaseEstimator):
         else:
             return self.pathway_transition_matrix_
 
-    @property
-    def feature_names(self):
-        return self.feature_names_
+    # @property
+    # def feature_names(self):
+    #     return self.feature_names_
 
     def fit(self, X=None, y=None):
 
         # nothing...
+
+
 
         return self
 
@@ -63,16 +65,104 @@ class GLPE(BaseEstimator):
         X = check_array(X)
 
         #restrict X to freature names using copy
-        Y = X[:,self.feature_names.astype(int)]
+        # Y = X[:,self.feature_names.astype(int)]
 
         # pathway_transition_matrix is pathway x features
         # X is subject x features
         #output is subject x pathway
         
         # matrix multiplication
-        X_transformed = self.pathway_transition_matrix.dot( Y.T ).T
+        X_transformed = self.pathway_transition_matrix.dot( X.T ).T
 
         return X_transformed
+
+
+
+'''
+subclass for centrality pathway transition matrix for simple linear pathway expression
+'''
+class LPE(GLPE):
+    def __init__(self, 
+                feature_ids: list = None,
+                pathway_files: str = None,
+                normalize_rows: bool = True):
+        # set params
+        self.feature_ids_ = list(feature_ids)
+        self.pathway_files_ = str(pathway_files)
+        self.normalize_rows_ = bool(normalize_rows)
+        self.pathway_names_ = []
+    
+    @property
+    def feature_ids(self):
+        return self.feature_ids_
+
+    @property
+    def pathway_files(self):
+        return self.pathway_files_
+
+    @property
+    def pathway_names(self):
+        return self.pathway_names_
+
+    @property
+    def normalize_rows(self):
+        return self.normalize_rows_
+
+    def fit(self, X: ndarray= None, y = None):
+
+        def restrict_feat_names(feature_names):
+            #restrict pathway feature names to those in the dataset (X)
+            restricted_feature_names = list(set(self.feature_ids_).intersection(set(feature_names)))
+            return restricted_feature_names
+
+
+        if os.path.isdir(self.pathway_files_):
+
+            
+            self.pathway_transition_matrix_ = []
+
+            self.pathway_names_ = []
+
+            #define pathway names
+            for f in os.listdir(self.pathway_files_):
+
+                start = f.find("R-HSA")
+                end = f.find(".csv")
+
+                pathway_name = f[start:end]
+
+                #read the csv and take the feature ids of the pathway to be the part of the string after the '_'
+                x = pandas.read_csv(self.pathway_files_ + f, index_col = 0)
+                x = x.fillna(0)
+
+                feature_names = list(x.columns)
+                if len(feature_names) > 0:
+                    if 'entrez' in feature_names[0]:
+                        feature_names = [e.partition("_")[2] for e in feature_names] #feature names after underscore
+
+                restricted_feature_names = restrict_feat_names(feature_names)
+
+                row = np.isin(self.feature_ids_, restricted_feature_names).astype(int)
+                if self.normalize_rows_:
+                    row = row/np.sum(row)
+
+                #add to pathway_transition_matrix
+                self.pathway_transition_matrix_.append(row)
+
+                #keep track of pathway names
+                self.pathway_names_.append(pathway_name)
+
+
+            self.pathway_transition_matrix_ = np.array(self.pathway_transition_matrix_)
+
+            np.nan_to_num(self.pathway_transition_matrix_, copy=False)
+                
+        else:
+            print('fit did not run- pathway_files is not a directory')
+        
+        return self
+
+
 
 
 
@@ -89,11 +179,18 @@ class CLPE(GLPE):
             network_type (string)
                                 The type of network to be used.
                                 Options are: 'precomputed', 'correlation', 'heatkernel'
+            feature_ids (list)
+                                A list of strings for gene (or other feature) ids that 
+                                correspond to rows of the data matrixX
             pathway_files: (string)
                                 File path for .csv of matrices for each pathway 
-                                
+            directed (bool)
+                                Whether or not we will use a precomputed 
+                                directed or undirected feature (gene) graph
             heat_kernel_param: (float)
                                 the heat for the heat kernel colculation if network type is heatkernel
+            normalize rows (bool)
+                                Whether or not to normalize the rows of the pathway expression matrix
             
     '''
     def __init__(self, 
@@ -112,7 +209,7 @@ class CLPE(GLPE):
         self.pathway_files_ = str(pathway_files)
         self.directed_ = bool(directed)
         self.heat_kernel_param_ = float(heat_kernel_param)
-        self.normalize_rows_ = float(normalize_rows)
+        self.normalize_rows_ = bool(normalize_rows)
         self.pathway_names_ = []
     
     @property

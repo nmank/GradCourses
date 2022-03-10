@@ -132,7 +132,7 @@ class LPE(GLPE):
                 pathway_name = f[start:end]
 
                 #read the csv and take the feature ids of the pathway to be the part of the string after the '_'
-                x = pandas.read_csv(self.pathway_files_ + f, index_col = 0)
+                x = pandas.read_csv(self.pathway_files_ +'/'+ f, index_col = 0)
                 x = x.fillna(0)
 
                 feature_names = list(x.columns)
@@ -272,7 +272,7 @@ class CLPE(GLPE):
         if isinstance(f, str):
 
             #read the csv and take the feature ids of the pathway to be the part of the string after the '_'
-            x = pandas.read_csv(self.pathway_files_ + f, index_col = 0)
+            x = pandas.read_csv(self.pathway_files_ +'/'+ f, index_col = 0)
             x = x.fillna(0)
 
             feature_names = list(x.columns)

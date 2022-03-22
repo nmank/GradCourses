@@ -83,6 +83,7 @@ subclass for centrality pathway transition matrix for simple linear pathway expr
 '''
 class LPE(GLPE):
     def __init__(self, 
+                pathway_transition_matrix: np.array = None,
                 feature_ids: list = None,
                 pathway_files: str = None,
                 normalize_rows: bool = True):
@@ -91,6 +92,8 @@ class LPE(GLPE):
         self.pathway_files_ = str(pathway_files)
         self.normalize_rows_ = bool(normalize_rows)
         self.pathway_names_ = []
+
+        super().__init__(pathway_transition_matrix)
     
     @property
     def feature_ids(self):
@@ -107,6 +110,47 @@ class LPE(GLPE):
     @property
     def normalize_rows(self):
         return self.normalize_rows_
+       
+    @property
+    def pathway_names(self):
+        
+        # check if precomputed
+        if  len(self.pathway_names_) > 0:
+            return self.pathway_names_
+
+        # calculate from files
+        self.pathway_names_ = []
+        if os.path.isfile(self.pathway_files_):
+            #if the pathway data is in one file
+            #then it should be indexed by first column (pathway names)
+            #rest of columns should be feature names for the pathway
+            #1 if feature is in the pathway
+            #0 otherwise
+
+            pathway_data = pandas.read_csv(self.pathway_files_, index_col = 0)
+            pathway_data = pathway_data.fillna(0)
+        
+            for pathway_name, _ in pathway_data.iterrows():
+
+                #keep track of pathway names
+                self.pathway_names_.append(pathway_name)
+
+        elif os.path.isdir(self.pathway_files_):
+            #define pathway names
+            for f in os.listdir(self.pathway_files_):
+
+                start = f.find("R-HSA")
+                end = f.find(".csv")
+
+                pathway_name = f[start:end]
+
+                #keep track of pathway names
+                self.pathway_names_.append(pathway_name)
+        
+        else:
+            print('pathway_files must be a file or directory path')
+        
+        return self.pathway_names_
 
     def fit(self, X: ndarray= None, y = None):
 
@@ -194,6 +238,7 @@ class CLPE(GLPE):
             
     '''
     def __init__(self, 
+                pathway_transition_matrix: np.array = None,
                 centrality_measure: str = None, 
                 network_type: str = None,
                 feature_ids: list = None,
@@ -211,6 +256,8 @@ class CLPE(GLPE):
         self.heat_kernel_param_ = float(heat_kernel_param)
         self.normalize_rows_ = bool(normalize_rows)
         self.pathway_names_ = []
+
+        super().__init__(pathway_transition_matrix)
     
     @property
     def centrality_measure(self):
@@ -243,6 +290,47 @@ class CLPE(GLPE):
     @property
     def normalize_rows(self):
         return self.normalize_rows_
+    
+    @property
+    def pathway_names(self):
+        
+        # check if precomputed
+        if  len(self.pathway_names_) > 0:
+            return self.pathway_names_
+
+        # calculate from files
+        self.pathway_names_ = []
+        if os.path.isfile(self.pathway_files_):
+            #if the pathway data is in one file
+            #then it should be indexed by first column (pathway names)
+            #rest of columns should be feature names for the pathway
+            #1 if feature is in the pathway
+            #0 otherwise
+
+            pathway_data = pandas.read_csv(self.pathway_files_, index_col = 0)
+            pathway_data = pathway_data.fillna(0)
+        
+            for pathway_name, _ in pathway_data.iterrows():
+
+                #keep track of pathway names
+                self.pathway_names_.append(pathway_name)
+
+        elif os.path.isdir(self.pathway_files_):
+            #define pathway names
+            for f in os.listdir(self.pathway_files_):
+
+                start = f.find("R-HSA")
+                end = f.find(".csv")
+
+                pathway_name = f[start:end]
+
+                #keep track of pathway names
+                self.pathway_names_.append(pathway_name)
+        
+        else:
+            print('pathway_files must be a file or directory path')
+        
+        return self.pathway_names_
 
 
     def generate_adjacency_matrix(self, X = None, f = None):

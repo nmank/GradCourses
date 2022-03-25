@@ -96,15 +96,28 @@ class SpectralClustering(BaseEstimator):
 
             if len(n0)>0 or len(n1)>0: #change to and for runnable code
 
-                current_idx0 = current_idx[n0]
-                current_idx1 = current_idx[n1]
+                if len(n0) > 0:
+                    current_idx0 = current_idx[n0]
 
-                if loso:
-                    bsr0 = self.test_cut_loso(X[:,current_idx0], y)
-                    bsr1 = self.test_cut_loso(X[:,current_idx1], y)
+                    if loso:
+                        bsr0 = self.test_cut_loso(X[:,current_idx0], y)
+                    else:
+                        bsr0 = self.test_cut(X[:,current_idx0], y)
+
                 else:
-                    bsr0 = self.test_cut(X[:,current_idx0], y)
-                    bsr1 = self.test_cut(X[:,current_idx1], y)
+                    bsr0 = 0
+
+                
+                if len(n1) > 0:
+                    current_idx1 = current_idx[n1]
+
+                    if loso:
+                        bsr1 = self.test_cut_loso(X[:,current_idx1], y)
+                    else:
+                        bsr1 = self.test_cut(X[:,current_idx1], y)
+                else:
+                    bsr1 = 0
+                    
 
                 if bsr0 >= best_bsr or bsr1 >= best_bsr:
                     if bsr0 > bsr1:
@@ -119,6 +132,9 @@ class SpectralClustering(BaseEstimator):
                 # print('cut number '+str(cut_num))
                 cut_num += 1
             else:
+                keep_cutting = False
+            
+            if len(current_idx) <= 1:
                 keep_cutting = False
 
             best_bsrs.append(best_bsr)

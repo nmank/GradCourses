@@ -184,7 +184,7 @@ class SpectralClustering(BaseEstimator):
 
             val_data = data[[fold],:]
 
-            clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
+            clf = make_pipeline(LinearSVC(dual = False))
 
             clf.fit(train_data, train_labels)
 

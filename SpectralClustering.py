@@ -10,7 +10,7 @@ from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from sklearn.pipeline import make_pipeline
-from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.preprocessing import StandardScaler
 
@@ -153,7 +153,7 @@ class SpectralClustering(BaseEstimator):
         Outputs:
             bsr (float): the BSR of the SVM classifier on the data and labels
         '''
-        clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
+        clf = make_pipeline(LinearSVC(dual = False))
 
         clf.fit(data, labels)
 

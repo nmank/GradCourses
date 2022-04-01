@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="PathwayAnalysis",
-    version="0.0.1",
+    version="0.0.2",
     author="Nate Mankovich",
     author_email="Nate.Mankovich@colostate.edu",
     description="A package for biological pathway analysis.",

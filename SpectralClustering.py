@@ -94,7 +94,7 @@ class SpectralClustering(BaseEstimator):
             n0 = n0.T[0]
             n1 = n1.T[0]
 
-            if len(n0)>0 or len(n1)>0: #change to and for runnable code
+            if len(n0)> 0 or len(n1)>0: #change to and for runnable code
 
                 if len(n0) > 0:
                     current_idx0 = current_idx[n0]

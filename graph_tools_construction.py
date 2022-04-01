@@ -438,6 +438,8 @@ def cluster_laplace(A, clst_adj, nodes, min_clust_sz, clst_node, all_clusters_no
         elif keep_going2:
             cluster_laplace(A2, clst_adj, nodes2, min_clust_sz, clst_node, all_clusters_node)
         
+    elif stop_criteria == 'loo_svm':
+        print('in construction')
 
     else:
         print('stop_criteria not recognized')
@@ -893,7 +895,7 @@ def supra_adjacency(dataset, time_weight = 'mean', msr = 'parcor', epsilon = 0, 
 
 
 
-def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85):
+def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85, pagerank_seed = 1):
     '''
     A method for computing the centrality of the nodes in a network
 
@@ -954,6 +956,8 @@ def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85):
                 eps = 0.001
 
                 #new and fast
+                np.random.seed(pagerank_seed)
+                
                 v = np.random.rand(n, 1)
                 v = v / np.linalg.norm(v, 1)
                 err = 1

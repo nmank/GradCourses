@@ -1,0 +1,6 @@
+README.md
+setup.py
+./PathwayAnalysis.egg-info/PKG-INFO
+./PathwayAnalysis.egg-info/SOURCES.txt
+./PathwayAnalysis.egg-info/dependency_links.txt
+./PathwayAnalysis.egg-info/top_level.txt

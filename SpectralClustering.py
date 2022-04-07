@@ -1,4 +1,5 @@
 # module imports
+from locale import ABMON_1
 import pandas
 import numpy as np
 from numpy import ndarray
@@ -57,7 +58,7 @@ class SpectralClustering(BaseEstimator):
         elif self.similarity_ is not None:
             self.A_ = gt.adjacency_matrix(X, self.similarity_, negative = False)
 
-    def transform(self, X: ndarray = None, y: ndarray  = None, loso = False, fiedler = True):
+    def transform(self, X: ndarray = None, y: ndarray  = None, loo = False, fiedler = True):
         '''
         SVM higherarchical clustering.
 
@@ -77,70 +78,98 @@ class SpectralClustering(BaseEstimator):
         self.A_ = check_array(self.A_)
 
 
-        keep_cutting = True
+        all_bsr = self.test_cut_loo(X, y)
 
-        best_bsrs = []
-        best_bsr = self.test_cut_loso(X, y)
-        best_bsrs.append(best_bsr)
+        nodes = np.arange(len(self.A_))
+        clst_nodes = []
+        clst_bsrs = []
 
-        current_idx = np.arange(self.A_.shape[0])
+        self.cluster_laplace_svm(self.A_, X, y, nodes, clst_nodes, clst_bsrs, previous_bsr = all_bsr, fiedler_switch =fiedler, loo = loo)
 
-        cut_num = 0
-        while keep_cutting:
-            current_A = self.A_[current_idx,:][:,current_idx]
+        return clst_nodes, clst_bsrs
+ 
+    def cluster_laplace_svm(self, A, data, labels, nodes, clst_nodes, clst_bsrs, previous_bsr = 0, fiedler_switch =True, loo = False):
 
-            n0, n1 = gt.laplace_partition(current_A, fiedler) #false for normalized laplacian
+        #partition the data using the fiedler vector
+        N1,N2 = gt.laplace_partition(A,fiedler_switch,1)
 
-            n0 = n0.T[0]
-            n1 = n1.T[0]
+        #sizes of the clusters
+        s1 = N1.size
+        s2 = N2.size
 
-            if len(n0)> 0 or len(n1)>0: #change to and for runnable code
+        #clean N1, N2
+        N1 = N1.T[0]
+        N2 = N2.T[0]
 
-                if len(n0) > 0:
-                    current_idx0 = current_idx[n0]
+        #init bsrs
+        bsr1 = 0
+        bsr2 = 0
 
-                    if loso:
-                        bsr0 = self.test_cut_loso(X[:,current_idx0], y)
-                    else:
-                        bsr0 = self.test_cut(X[:,current_idx0], y)
+        if s1 > 0:
+            nodes1 = nodes[N1]
+            data1 = data[:,N1]
+            A1 = A[N1,:][:,N1]
 
-                else:
-                    bsr0 = 0
-
-                
-                if len(n1) > 0:
-                    current_idx1 = current_idx[n1]
-
-                    if loso:
-                        bsr1 = self.test_cut_loso(X[:,current_idx1], y)
-                    else:
-                        bsr1 = self.test_cut(X[:,current_idx1], y)
-                else:
-                    bsr1 = 0
-                    
-
-                if bsr0 >= best_bsr or bsr1 >= best_bsr:
-                    if bsr0 > bsr1:
-                        current_idx = current_idx[n0]
-                        best_bsr = bsr0
-                    else:
-                        current_idx = current_idx[n1]
-                        best_bsr = bsr1
-                else:
-                    keep_cutting = False
-                
-                # print('cut number '+str(cut_num))
-                cut_num += 1
+            if loo:
+                bsr1 = self.test_cut_loo(data1, labels)
             else:
-                keep_cutting = False
-            
-            if len(current_idx) <= 1:
-                keep_cutting = False
+                bsr1 = self.test_cut(data1, labels)
 
-            best_bsrs.append(best_bsr)
-        
-        return current_idx, best_bsrs
+        if s2 > 0:
+            nodes2 = nodes[N2]
+            data2 = data[:,N2]
+            A2 = A[N2,:][:,N2]
+            if loo:
+                bsr2 = self.test_cut_loo(data2, labels)
+            else:
+                bsr2 = self.test_cut(data2, labels)
 
+        if (bsr1 < previous_bsr and bsr2 < previous_bsr) or (len(nodes) == 1):
+            clst_nodes.append(np.array([int(node) for node in nodes]))
+            clst_bsrs.append(previous_bsr)
+            print(f'branch {len(clst_bsrs)+1}')
+        else:
+            if bsr1 == bsr2:
+                self.cluster_laplace_svm(A1, 
+                                    data1, 
+                                    labels,
+                                    nodes1, 
+                                    clst_nodes,
+                                    clst_bsrs, 
+                                    previous_bsr = bsr1, 
+                                    fiedler_switch =True,
+                                    loo = loo)
+                self.cluster_laplace_svm(A2, 
+                                    data2, 
+                                    labels, 
+                                    nodes2, 
+                                    clst_nodes,
+                                    clst_bsrs, 
+                                    previous_bsr = bsr2, 
+                                    fiedler_switch =True,
+                                    loo = loo)
+
+            elif bsr1 > bsr2:
+                self.cluster_laplace_svm(A1, 
+                                    data1, 
+                                    labels, 
+                                    nodes1, 
+                                    clst_nodes,
+                                    clst_bsrs, 
+                                    previous_bsr = bsr1, 
+                                    fiedler_switch =True,
+                                    loo = loo)
+
+            elif bsr2 > bsr1:
+                self.cluster_laplace_svm(A2, 
+                                    data2, 
+                                    labels, 
+                                    nodes2, 
+                                    clst_nodes,
+                                    clst_bsrs, 
+                                    previous_bsr = bsr2, 
+                                    fiedler_switch =True,
+                                    loo = loo)
 
     def test_cut(self, data, labels):
         '''
@@ -163,33 +192,33 @@ class SpectralClustering(BaseEstimator):
 
         return bsr
 
-    def test_cut_loso(self, data, labels):
-        '''
-        Train and run an SVM classifier on the data and labels with leave one subject out framework.
+    def test_cut_loo(self, data, labels):
+            '''
+            Train and run an SVM classifier on the data and labels with leave one subject out framework.
 
-        Inputs:
-            data (numpy array): the data where a datapoint in a row
-            labels (numpy array or list) the labels of the rows of data
-        
-        Outputs:
-            bsr (float): the BSR of the SVM classifier on the data and labels
-        '''
-        subject_idxs = list(range(data.shape[0]))
-        
-        predictions = []
-        for fold in subject_idxs:
-            train_data_idx = np.setdiff1d(np.array(subject_idxs), np.array([fold]))
-            train_data = data[train_data_idx,:]
-            train_labels = [labels[t] for t in train_data_idx]
+            Inputs:
+                data (numpy array): the data where a datapoint in a row
+                labels (numpy array or list) the labels of the rows of data
+            
+            Outputs:
+                bsr (float): the BSR of the SVM classifier on the data and labels
+            '''
+            subject_idxs = list(range(data.shape[0]))
+            
+            predictions = []
+            for fold in subject_idxs:
+                train_data_idx = np.setdiff1d(np.array(subject_idxs), np.array([fold]))
+                train_data = data[train_data_idx,:]
+                train_labels = [labels[t] for t in train_data_idx]
 
-            val_data = data[[fold],:]
+                val_data = data[[fold],:]
 
-            clf = make_pipeline(LinearSVC(dual = False))
+                clf = make_pipeline(LinearSVC(dual = False))
 
-            clf.fit(train_data, train_labels)
+                clf.fit(train_data, train_labels)
 
-            predictions.append(clf.predict(val_data))
+                predictions.append(clf.predict(val_data))
 
-        bsr = balanced_accuracy_score(predictions, labels)
+            bsr = balanced_accuracy_score(predictions, labels)
 
-        return bsr
+            return bsr

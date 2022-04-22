@@ -105,7 +105,7 @@ class SpectralClustering(BaseEstimator):
         bsr1 = 0
         bsr2 = 0
 
-        if s1 > 0:
+        if s1 > 1:
             nodes1 = nodes[N1]
             data1 = data[:,N1]
             A1 = A[N1,:][:,N1]
@@ -115,7 +115,7 @@ class SpectralClustering(BaseEstimator):
             else:
                 bsr1 = self.test_cut(data1, labels)
 
-        if s2 > 0:
+        if s2 > 1:
             nodes2 = nodes[N2]
             data2 = data[:,N2]
             A2 = A[N2,:][:,N2]

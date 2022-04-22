@@ -895,7 +895,7 @@ def supra_adjacency(dataset, time_weight = 'mean', msr = 'parcor', epsilon = 0, 
 
 
 
-def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85, pagerank_seed = 1):
+def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85, pagerank_seed = 1, stochastic = False):
     '''
     A method for computing the centrality of the nodes in a network
 
@@ -952,19 +952,34 @@ def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85, pagerank_s
                     else:
                         M[:,i] = connected_A[:,i]/A_sum
 
-                #taken from da wikipedia
-                eps = 0.001
+                if stochastic:
+                    #taken from da wikipedia
+                    eps = 0.001
 
-                #new and fast
-                np.random.seed(pagerank_seed)
-                
-                v = np.random.rand(n, 1)
-                v = v / np.linalg.norm(v, 1)
-                err = 1
-                while err > eps:
-                    v0 = v.copy()
-                    v = (pagerank_d * M) @ v0 + (1 - pagerank_d) / n
-                    err = np.linalg.norm(v - v0, 2)
+                    #new and fast
+                    np.random.seed(pagerank_seed)
+                    
+                    v = np.random.rand(n, 1)
+                    v = v / np.linalg.norm(v, 1)
+                    err = 1
+                    while err > eps:
+                        v0 = v.copy()
+                        v = (pagerank_d * M) @ v0 + (1 - pagerank_d) / n
+                        err = np.linalg.norm(v - v0, 2)
+
+                    #sanity check
+                    big_M = (pagerank_d * M)  + np.ones((n,n))*(1 - pagerank_d) / n
+                    v_check = big_M @ v
+                    if not np.allclose(v_check, v, rtol=1e-05, atol=1e-08):
+                        print('page rank not converged')
+                else:
+                    big_M = (pagerank_d * M)  + np.ones((n,n))*(1 - pagerank_d) / n
+                    evals, evecs = np.linalg.eig(big_M)
+                    dist_from_1 = np.abs(evals - 1)
+                    idx = dist_from_1.argmin()
+                    v = evecs[:,idx]
+                    if dist_from_1 > 1e-08:
+                        print('page rank not converged')
                     
                 connected_scores = v.flatten()
 

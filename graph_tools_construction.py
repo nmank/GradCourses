@@ -978,6 +978,7 @@ def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85, pagerank_s
                     dist_from_1 = np.abs(evals - 1)
                     idx = dist_from_1.argmin()
                     v = evecs[:,idx]
+                    v = v/np.sum(v)
                     if np.abs(evals[idx]-1) > 1e-08:
                         print('page rank not converged')
                     

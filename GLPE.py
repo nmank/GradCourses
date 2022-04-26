@@ -438,7 +438,7 @@ class CLPE(GLPE):
 
         if len(feature_idx) > 0:
             #centrality scores
-            scores = gt.centrality_scores(A, self.centrality_measure_)
+            scores = gt.centrality_scores(A, self.centrality_measure_, in_rank = False) #using A.T
 
             #normalize degree centrality by maximum degree
             if self.centrality_measure_ == 'degree':

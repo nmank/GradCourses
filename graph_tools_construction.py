@@ -895,7 +895,7 @@ def supra_adjacency(dataset, time_weight = 'mean', msr = 'parcor', epsilon = 0, 
 
 
 
-def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85, pagerank_seed = 1, stochastic = False):
+def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85, pagerank_seed = 1, stochastic = False, in_rank = False):
     '''
     A method for computing the centrality of the nodes in a network
 
@@ -930,14 +930,16 @@ def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85, pagerank_s
             scores = np.array([0])
         
     elif centrality == 'page_rank':
-        A = A.T
+        if not in_rank:
+            A = A.T
         n = A.shape[0]
         if n == 1:
             scores = np.array([0])
         else:
-            connected_idx_in = np.where(np.sum(A, axis = 0) != 0)[0]
-            connected_idx_out = np.where(np.sum(A, axis = 1) != 0)[0]
-            connected_idx = np.union1d(connected_idx_in, connected_idx_out)
+            #in connections
+            connected_idx = np.where(np.sum(A, axis = 0) != 0)[0]
+            #connected_idx_out = np.where(np.sum(A, axis = 1) != 0)[0]
+            #connected_idx = np.union1d(connected_idx_in, connected_idx_out)
             connected_A = A[:,connected_idx][connected_idx,:]
             n = len(connected_idx)
             if n <= 1:

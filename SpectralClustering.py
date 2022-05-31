@@ -58,7 +58,7 @@ class SpectralClustering(BaseEstimator):
         elif self.similarity_ is not None:
             self.A_ = gt.adjacency_matrix(X, self.similarity_, negative = False)
 
-    def transform(self, X: ndarray = None, y: ndarray  = None, loo = False, fiedler = True, verbose = False):
+    def transform(self, X: ndarray = None, y: ndarray  = None, loo = False, fiedler = True):
         '''
         SVM higherarchical clustering.
 
@@ -83,12 +83,13 @@ class SpectralClustering(BaseEstimator):
         nodes = np.arange(len(self.A_))
         clst_nodes = []
         clst_bsrs = []
+        clst_mean_edges = []
 
-        self.cluster_laplace_svm(self.A_, X, y, nodes, clst_nodes, clst_bsrs, previous_bsr = all_bsr, fiedler_switch =fiedler, loo = loo, verbose = verbose)
+        self.cluster_laplace_svm(self.A_, X, y, nodes, clst_nodes, clst_bsrs, clst_mean_edges, previous_bsr = all_bsr, fiedler_switch =fiedler, loo = loo)
 
-        return clst_nodes, clst_bsrs
+        return clst_nodes, clst_bsrs, clst_mean_edges
  
-    def cluster_laplace_svm(self, A, data, labels, nodes, clst_nodes, clst_bsrs, previous_bsr = 0, fiedler_switch =True, loo = False, verbose = False):
+    def cluster_laplace_svm(self, A, data, labels, nodes, clst_nodes, clst_bsrs, clst_mean_edges, previous_bsr = 0, fiedler_switch =True, loo = False):
 
         #partition the data using the fiedler vector
         N1,N2 = gt.laplace_partition(A,fiedler_switch,1)
@@ -127,50 +128,57 @@ class SpectralClustering(BaseEstimator):
         if (bsr1 < previous_bsr and bsr2 < previous_bsr) or (len(nodes) == 1):
             clst_nodes.append(np.array([int(node) for node in nodes]))
             clst_bsrs.append(previous_bsr)
-            print(f'branch {len(clst_bsrs)+1}')
-            if verbose:
-                print(f'mean weight: {np.mean(A[A!=0])}')
+            clst_mean_edges.append(np.mean(A[A!=0]))
+            print(f'branch {len(clst_bsrs)}')
         else:
             if bsr1 == bsr2:
+                clst_mean_edges.append(np.mean(A1[A1!=0]))
                 self.cluster_laplace_svm(A1, 
                                     data1, 
                                     labels,
                                     nodes1, 
                                     clst_nodes,
-                                    clst_bsrs, 
+                                    clst_bsrs,
+                                    clst_mean_edges, 
                                     previous_bsr = bsr1, 
-                                    fiedler_switch =True,
+                                    fiedler_switch = True,
                                     loo = loo)
+                clst_mean_edges.append(np.mean(A2[A2!=0]))
                 self.cluster_laplace_svm(A2, 
                                     data2, 
                                     labels, 
                                     nodes2, 
                                     clst_nodes,
-                                    clst_bsrs, 
+                                    clst_bsrs,
+                                    clst_mean_edges, 
                                     previous_bsr = bsr2, 
-                                    fiedler_switch =True,
+                                    fiedler_switch = True,
                                     loo = loo)
 
             elif bsr1 > bsr2:
+                clst_mean_edges.append(np.mean(A1[A1!=0]))
                 self.cluster_laplace_svm(A1, 
                                     data1, 
                                     labels, 
                                     nodes1, 
                                     clst_nodes,
-                                    clst_bsrs, 
+                                    clst_bsrs,
+                                    clst_mean_edges, 
                                     previous_bsr = bsr1, 
-                                    fiedler_switch =True,
+                                    fiedler_switch = True,
                                     loo = loo)
 
             elif bsr2 > bsr1:
+                clst_mean_edges.append(np.mean(A2[A2!=0]))
                 self.cluster_laplace_svm(A2, 
                                     data2, 
                                     labels, 
                                     nodes2, 
                                     clst_nodes,
-                                    clst_bsrs, 
+                                    clst_bsrs,
+                                    clst_mean_edges, 
                                     previous_bsr = bsr2, 
-                                    fiedler_switch =True,
+                                    fiedler_switch = True,
                                     loo = loo)
 
     def test_cut(self, data, labels):

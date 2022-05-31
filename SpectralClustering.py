@@ -90,9 +90,6 @@ class SpectralClustering(BaseEstimator):
  
     def cluster_laplace_svm(self, A, data, labels, nodes, clst_nodes, clst_bsrs, previous_bsr = 0, fiedler_switch =True, loo = False, verbose = False):
 
-        if verbose:
-            print(f'mean weight: {np.mean(A[A!=0])}')
-
         #partition the data using the fiedler vector
         N1,N2 = gt.laplace_partition(A,fiedler_switch,1)
 

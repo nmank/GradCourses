@@ -58,7 +58,7 @@ class SpectralClustering(BaseEstimator):
         elif self.similarity_ is not None:
             self.A_ = gt.adjacency_matrix(X, self.similarity_, negative = False)
 
-    def transform(self, X: ndarray = None, y: ndarray  = None, loo = False, fiedler = True):
+    def transform(self, X: ndarray = None, y: ndarray  = None, loo = False, fiedler = True, verbose = False):
         '''
         SVM higherarchical clustering.
 
@@ -84,11 +84,11 @@ class SpectralClustering(BaseEstimator):
         clst_nodes = []
         clst_bsrs = []
 
-        self.cluster_laplace_svm(self.A_, X, y, nodes, clst_nodes, clst_bsrs, previous_bsr = all_bsr, fiedler_switch =fiedler, loo = loo)
+        self.cluster_laplace_svm(self.A_, X, y, nodes, clst_nodes, clst_bsrs, previous_bsr = all_bsr, fiedler_switch =fiedler, loo = loo, verbose = verbose)
 
         return clst_nodes, clst_bsrs
  
-    def cluster_laplace_svm(self, A, data, labels, nodes, clst_nodes, clst_bsrs, previous_bsr = 0, fiedler_switch =True, loo = False):
+    def cluster_laplace_svm(self, A, data, labels, nodes, clst_nodes, clst_bsrs, previous_bsr = 0, fiedler_switch =True, loo = False, verbose = False):
 
         #partition the data using the fiedler vector
         N1,N2 = gt.laplace_partition(A,fiedler_switch,1)
@@ -128,6 +128,8 @@ class SpectralClustering(BaseEstimator):
             clst_nodes.append(np.array([int(node) for node in nodes]))
             clst_bsrs.append(previous_bsr)
             print(f'branch {len(clst_bsrs)+1}')
+            if verbose:
+                print(f'mean weight: {np.mean(A[A!=0])}')
         else:
             if bsr1 == bsr2:
                 self.cluster_laplace_svm(A1, 

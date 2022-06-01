@@ -133,8 +133,7 @@ class SpectralClustering(BaseEstimator):
         if (bsr1 < previous_bsr and bsr2 < previous_bsr) or (len(nodes) == 1):
             clst_nodes.append(np.array([int(node) for node in nodes]))
             clst_bsrs.append(previous_bsr)
-            print(len(clst_mean_edges))
-            print(f'branch {len(clst_bsrs)}')
+            # print(f'branch {len(clst_bsrs)}')
         else:
             if bsr1 == bsr2:
                 new_root = clst_tree

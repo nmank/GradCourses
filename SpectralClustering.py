@@ -15,6 +15,8 @@ from sklearn.svm import LinearSVC
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.preprocessing import StandardScaler
 
+from binarytree import Node
+
 class SpectralClustering(BaseEstimator):
     '''
     This class is for classification-informed spectral higherarchical clustering.
@@ -84,12 +86,15 @@ class SpectralClustering(BaseEstimator):
         clst_nodes = []
         clst_bsrs = []
         clst_mean_edges = []
+        root = Node(0)
+        clst_tree = root
+        new_root = root
 
-        self.cluster_laplace_svm(self.A_, X, y, nodes, clst_nodes, clst_bsrs, clst_mean_edges, previous_bsr = all_bsr, fiedler_switch =fiedler, loo = loo)
+        self.cluster_laplace_svm(self.A_, X, y, nodes, clst_nodes, clst_bsrs, clst_mean_edges, clst_tree, new_root, previous_bsr = all_bsr, fiedler_switch =fiedler, loo = loo)
 
-        return clst_nodes, clst_bsrs, clst_mean_edges
+        return clst_nodes, clst_bsrs, clst_mean_edges, clst_tree
  
-    def cluster_laplace_svm(self, A, data, labels, nodes, clst_nodes, clst_bsrs, clst_mean_edges, previous_bsr = 0, fiedler_switch =True, loo = False):
+    def cluster_laplace_svm(self, A, data, labels, nodes, clst_nodes, clst_bsrs, clst_mean_edges, clst_tree, new_root, previous_bsr = 0, fiedler_switch =True, loo = False):
 
         #partition the data using the fiedler vector
         N1,N2 = gt.laplace_partition(A,fiedler_switch,1)
@@ -128,58 +133,82 @@ class SpectralClustering(BaseEstimator):
         if (bsr1 < previous_bsr and bsr2 < previous_bsr) or (len(nodes) == 1):
             clst_nodes.append(np.array([int(node) for node in nodes]))
             clst_bsrs.append(previous_bsr)
-            clst_mean_edges.append(np.mean(A[A!=0]))
+            print(len(clst_mean_edges))
             print(f'branch {len(clst_bsrs)}')
         else:
             if bsr1 == bsr2:
+                new_root = clst_tree
                 clst_mean_edges.append(np.mean(A1[A1!=0]))
+                clst_tree.left = Node(len(clst_mean_edges))
+                clst_tree = clst_tree.left
                 self.cluster_laplace_svm(A1, 
                                     data1, 
                                     labels,
                                     nodes1, 
                                     clst_nodes,
                                     clst_bsrs,
-                                    clst_mean_edges, 
+                                    clst_mean_edges,
+                                    clst_tree,
+                                    new_root, 
                                     previous_bsr = bsr1, 
                                     fiedler_switch = True,
                                     loo = loo)
+
                 clst_mean_edges.append(np.mean(A2[A2!=0]))
+                clst_tree = new_root
+                clst_tree.right = Node(len(clst_mean_edges))
+                clst_tree = clst_tree.right
                 self.cluster_laplace_svm(A2, 
                                     data2, 
                                     labels, 
                                     nodes2, 
                                     clst_nodes,
                                     clst_bsrs,
-                                    clst_mean_edges, 
+                                    clst_mean_edges,
+                                    clst_tree,
+                                    new_root,  
                                     previous_bsr = bsr2, 
                                     fiedler_switch = True,
                                     loo = loo)
+                
 
             elif bsr1 > bsr2:
                 clst_mean_edges.append(np.mean(A1[A1!=0]))
+                clst_tree.left = Node(len(clst_mean_edges))
+                clst_tree = clst_tree.left
                 self.cluster_laplace_svm(A1, 
                                     data1, 
                                     labels, 
                                     nodes1, 
                                     clst_nodes,
                                     clst_bsrs,
-                                    clst_mean_edges, 
+                                    clst_mean_edges,
+                                    clst_tree,
+                                    new_root,  
                                     previous_bsr = bsr1, 
                                     fiedler_switch = True,
                                     loo = loo)
+                
+                
 
             elif bsr2 > bsr1:
                 clst_mean_edges.append(np.mean(A2[A2!=0]))
+                clst_tree.right = Node(len(clst_mean_edges))
+                clst_tree = clst_tree.right
                 self.cluster_laplace_svm(A2, 
                                     data2, 
                                     labels, 
                                     nodes2, 
                                     clst_nodes,
                                     clst_bsrs,
-                                    clst_mean_edges, 
+                                    clst_mean_edges,
+                                    clst_tree,
+                                    new_root,  
                                     previous_bsr = bsr2, 
                                     fiedler_switch = True,
                                     loo = loo)
+                
+                
 
     def test_cut(self, data, labels):
         '''

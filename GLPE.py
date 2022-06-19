@@ -139,10 +139,11 @@ class LPE(GLPE):
             #define pathway names
             for f in os.listdir(self.pathway_files_):
 
-                start = f.find("R-HSA")
-                end = f.find(".csv")
+                # start = f.find("R-HSA")
+                # end = f.find(".csv")
 
-                pathway_name = f[start:end]
+                # pathway_name = f[start:end]
+                pathway_name = f[7:-4]
 
                 #keep track of pathway names
                 self.pathway_names_.append(pathway_name)
@@ -170,10 +171,11 @@ class LPE(GLPE):
             #define pathway names
             for f in os.listdir(self.pathway_files_):
 
-                start = f.find("R-HSA")
-                end = f.find(".csv")
+                # start = f.find("R-HSA")
+                # end = f.find(".csv")
 
-                pathway_name = f[start:end]
+                # pathway_name = f[start:end]
+                pathway_name = f[7:-4]
 
                 #read the csv and take the feature ids of the pathway to be the part of the string after the '_'
                 x = pandas.read_csv(self.pathway_files_ +'/'+ f, index_col = 0)
@@ -319,10 +321,11 @@ class CLPE(GLPE):
             #define pathway names
             for f in os.listdir(self.pathway_files_):
 
-                start = f.find("R-HSA")
-                end = f.find(".csv")
+                # start = f.find("R-HSA")
+                # end = f.find(".csv")
 
-                pathway_name = f[start:end]
+                # pathway_name = f[start:end]
+                pathway_name = f[7:-4]
 
                 #keep track of pathway names
                 self.pathway_names_.append(pathway_name)
@@ -511,10 +514,11 @@ class CLPE(GLPE):
             #define pathway names
             for f in os.listdir(self.pathway_files_):
 
-                start = f.find("R-HSA")
-                end = f.find(".csv")
+                # start = f.find("R-HSA")
+                # end = f.find(".csv")
 
-                pathway_name = f[start:end]
+                # pathway_name = f[start:end]
+                pathway_name = f[7:-4]
 
 
                 #adjacency matrix

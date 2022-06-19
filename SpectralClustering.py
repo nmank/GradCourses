@@ -133,12 +133,12 @@ class SpectralClustering(BaseEstimator):
         if (bsr1 < previous_bsr and bsr2 < previous_bsr) or (len(nodes) == 1):
             clst_nodes.append(np.array([int(node) for node in nodes]))
             clst_bsrs.append(previous_bsr)
-            # print(f'branch {len(clst_bsrs)}')
+            print(f'leaf {clst_mean_edges[-1]}')
         else:
             if bsr1 == bsr2:
                 new_root = clst_tree
                 clst_mean_edges.append(np.mean(A1[A1!=0]))
-                clst_tree.left = Node(len(clst_mean_edges))
+                clst_tree.left = Node(np.round(clst_mean_edges[-1],3))
                 clst_tree = clst_tree.left
                 self.cluster_laplace_svm(A1, 
                                     data1, 
@@ -155,7 +155,7 @@ class SpectralClustering(BaseEstimator):
 
                 clst_mean_edges.append(np.mean(A2[A2!=0]))
                 clst_tree = new_root
-                clst_tree.right = Node(len(clst_mean_edges))
+                clst_tree.right = Node(np.round(clst_mean_edges[-1],3))
                 clst_tree = clst_tree.right
                 self.cluster_laplace_svm(A2, 
                                     data2, 
@@ -173,7 +173,7 @@ class SpectralClustering(BaseEstimator):
 
             elif bsr1 > bsr2:
                 clst_mean_edges.append(np.mean(A1[A1!=0]))
-                clst_tree.left = Node(len(clst_mean_edges))
+                clst_tree.left = Node(np.round(clst_mean_edges[-1],3))
                 clst_tree = clst_tree.left
                 self.cluster_laplace_svm(A1, 
                                     data1, 
@@ -192,7 +192,7 @@ class SpectralClustering(BaseEstimator):
 
             elif bsr2 > bsr1:
                 clst_mean_edges.append(np.mean(A2[A2!=0]))
-                clst_tree.right = Node(len(clst_mean_edges))
+                clst_tree.right = Node(np.round(clst_mean_edges[-1],3))
                 clst_tree = clst_tree.right
                 self.cluster_laplace_svm(A2, 
                                     data2, 
@@ -220,7 +220,8 @@ class SpectralClustering(BaseEstimator):
         Outputs:
             bsr (float): the BSR of the SVM classifier on the data and labels
         '''
-        clf = make_pipeline(LinearSVC(dual = False))
+        # clf = make_pipeline(LinearSVC(dual = False)) #old
+        clf = make_pipeline(LinearSVC(max_iter = 20000)) #new
 
         clf.fit(data, labels)
 
@@ -251,7 +252,8 @@ class SpectralClustering(BaseEstimator):
 
                 val_data = data[[fold],:]
 
-                clf = make_pipeline(LinearSVC(dual = False))
+                # clf = make_pipeline(LinearSVC(dual = False)) #old
+                clf = make_pipeline(LinearSVC(max_iter = 20000)) #new
 
                 clf.fit(train_data, train_labels)
 

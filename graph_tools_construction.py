@@ -160,7 +160,12 @@ def zobs(X, class_labels, negative = False):
     z_class0 = np.arctanh(r_class0)
     z_class1 = np.arctanh(r_class1)
 
-    zobs = (z_class0-z_class1) / np.sqrt( 1/(len(idx_class0)-3) + 1/(len(idx_class0)-3))
+    if len(idx_class0) == 0 or len(idx_class1) == 0:
+        print('one class size is 0! zobs failed')
+    elif len(idx_class0) < 4 or len(idx_class1) < 4:
+        zobs = (z_class0-z_class1) / np.sqrt(1/(len(idx_class0)) + 1/(len(idx_class1)))
+    else:
+        zobs = (z_class0-z_class1) / np.sqrt( 1/(len(idx_class0)-3) + 1/(len(idx_class1)-3))
 
     if not negative:
         zobs = np.abs(zobs)

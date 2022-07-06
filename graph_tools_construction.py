@@ -157,15 +157,21 @@ def zobs(X, class_labels, negative = False):
     r_class0 =  adjacency_matrix(X_class0, msr = 'correlation', negative = True)
     r_class1 =  adjacency_matrix(X_class1, msr = 'correlation', negative = True)
 
+    if np.sum(np.abs(r_class0) == 1) > 0 or np.sum(np.abs(r_class1) == 1) > 0:
+        print('correlation of -1 or 1 for some genes. setting correlations to .99999999')
+
+    r_class0[r_class0==1] = 0.99999999
+    r_class1[r_class1==1] = 0.99999999
+
+    r_class0[r_class0==-1] = -0.99999999
+    r_class1[r_class1==-1] = -0.99999999
+
     z_class0 = np.arctanh(r_class0)
     z_class1 = np.arctanh(r_class1)
 
-    if len(idx_class0) == 0 or len(idx_class1) == 0:
-        print('one class size is 0! zobs failed')
-    elif len(idx_class0) < 4 or len(idx_class1) < 4:
-        zobs = (z_class0-z_class1) / np.sqrt(1/(len(idx_class0)) + 1/(len(idx_class1)))
-    else:
-        zobs = (z_class0-z_class1) / np.sqrt( 1/(len(idx_class0)-3) + 1/(len(idx_class1)-3))
+    if len(idx_class0) < 4 or len(idx_class1) < 4:
+        print('potential divide by 0 in zobs!')
+    zobs = (z_class0-z_class1) / np.sqrt( 1/(len(idx_class0)-3) + 1/(len(idx_class1)-3))
 
     if not negative:
         zobs = np.abs(zobs)

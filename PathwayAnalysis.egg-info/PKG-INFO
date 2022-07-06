@@ -5,9 +5,7 @@ Summary: A package for biological pathway analysis.
 Home-page: https://github.com/nmank/PathwayAnalysis
 Author: Nate Mankovich
 Author-email: Nate.Mankovich@colostate.edu
-License: UNKNOWN
 Project-URL: Bug Tracker, https://github.com/nmank/PathwayAnalysis/issues
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
@@ -15,7 +13,5 @@ Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 
 # PathwayAnalysis
-
-
 
 

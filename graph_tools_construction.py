@@ -296,8 +296,6 @@ def erdos_reyni(n,m, seed):
 
 
 
-
-
 def laplace_partition(A, fiedler = True, k = 1):
     '''
     A function that partitions the data using the graph Laplacian
@@ -483,7 +481,9 @@ def embedgraph(A):
 
 
 
-def displaygraph(small_A,node_sizes,labels = {},layout = 'shell', plt_name = 'new_graph.png'):
+def displaygraph(small_A, labels, scores = [],  
+                layout = 'spring', save_name = 'new_graph.png',
+                remove_edges = True):
     '''
     A function that plots the graph
 
@@ -501,30 +501,40 @@ def displaygraph(small_A,node_sizes,labels = {},layout = 'shell', plt_name = 'ne
     outputs: plots the graph (no return values)
     '''
 
-    graph = []
-    it = np.arange(small_A[:,1].size)
-    for i in it:
-        for j in it:
-            if  i > j and small_A[i,j] !=0:
-                graph.append((i,j))
+    #get network centrality scores
+    if len(scores) == 0:
+        scores = centrality_scores(small_A, centrality = 'degree')
+        scores = scores / np.max(scores)
 
-    # extract nodes from graph
-    nodes = set([n1 for n1, n2 in graph] + [n2 for n1, n2 in graph])
+    if remove_edges:
+        #remove nodes less than median weight
+        small_A[np.arange(len(scores)), np.arange(len(scores))] = 0
+        # small_A = small_A/np.max(small_A)
+        idx =  np.where(small_A < np.median(small_A))
+        small_A[idx] = 0
 
-    # create networkx graph
-    G=nx.Graph()
+    #make networkx graph object
+    G = nx.from_numpy_matrix(np.round(np.matrix(small_A),2))
 
-    # add nodes
-    for node in nodes:
-        G.add_node(node)
+    #node labels using labels
+    mapping = {}
+    for i in range(len(labels)):
+        mapping[i] = labels[i]
 
-    # add edges
-    weights = []
-    for edge in graph:
-        weights.append(small_A[edge[0],edge[1]]*3)
-        G.add_edge(edge[0], edge[1], weight = weights[-1])
+    print('hi')
+
+    #relabel the nodes in the network
+    G = nx.relabel_nodes(G, mapping)
+
+    #use edge weights
+    edges = G.edges()
+    # weights = [G[u][v]['weight']*10 for u,v in edges]
+    weights = [G[u][v]['weight'] for u,v in edges]
 
     # draw graph
+    plt.figure()
+    
+    #choose node orientation
     if layout =='shell':
         pos = nx.shell_layout(G)
     elif layout =='circular':
@@ -534,16 +544,18 @@ def displaygraph(small_A,node_sizes,labels = {},layout = 'shell', plt_name = 'ne
     elif layout == 'spectral':
         pos = nx.spectral_layout(G)
 
-    if len(labels) > 0:
-        nx.draw(G, pos, node_size = node_sizes)
-        nx.draw_networkx_labels(G, pos, labels)
-    else:
-        # nx.draw(G, pos, node_size = node_sizes, width=weights)
-        nx.draw(G, pos, node_size = node_sizes)
+    #draw edges and nodes
+    edges = nx.draw_networkx_edges(G, pos, edge_color=weights, width=4,
+                                edge_cmap=plt.cm.Oranges)
+    nodes = nx.draw_networkx_nodes(G, pos, node_color='antiquewhite', 
+                                node_size = scores*100)
+    nx.draw_networkx_labels(G, pos, font_size=3, font_color='k')
 
-    # show graph
-    #plt.show()
-    plt.savefig(plt_name)
+    plt.colorbar(edges)
+    plt.axis('off')
+
+    #save the figure
+    plt.savefig(save_name, dpi=1000)
 
 
 

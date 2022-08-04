@@ -1057,15 +1057,16 @@ def supra_adjacency_scores(sA, centrality, n_times, n_nodes):
 def cluster_module_reps(A: np.array, labels: list, MEDissThres: float = .2):
     # A undirected adjacency matrix
 
-    # normalize rows of A
-
+    # divide A by max entry
+    if len(np.where(A > 1)[0])> 0:
+        A = A/np.amax(A)
 
     # Calculate dissimilarity of module eigengenes
     MEDiss = pd.DataFrame(1 - A, columns = labels, index = labels)
 
     # Cluster module eigengenes
     d = squareform(MEDiss, checks=False)
-    METree = dendrogram = sch.linkage(d, method='average')
+    METree = sch.linkage(d, method='average')
 
     plt.figure(figsize=(max(20, round(MEDiss.shape[1] / 20)), 10), facecolor='white')
     sch.dendrogram(METree, color_threshold=MEDissThres, labels=MEDiss.columns, leaf_rotation=90,

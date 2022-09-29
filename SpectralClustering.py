@@ -26,7 +26,7 @@ class SpectralClustering(BaseEstimator):
     nodes in the bigger graph.
     '''
 
-    def __init__(self, similarity: str = None, A: ndarray = None):
+    def __init__(self, similarity: str = None, A: ndarray = None, loo: bool = False, fiedler: bool = True):
         '''
         Inputs:
             similarity (string) can be either 'correlation', 'heatkernel' or 'zobs'
@@ -35,6 +35,8 @@ class SpectralClustering(BaseEstimator):
         # set params
         self.similarity_ = similarity
         self.A_ = A
+        self.loo_ = loo
+        self.fiedler_ = fiedler
 
     @property
     def similarity(self):
@@ -43,6 +45,14 @@ class SpectralClustering(BaseEstimator):
     @property
     def A(self):
         return self.A_
+    
+    @property
+    def loo(self):
+        return self.loo_
+
+    @property
+    def fiedler(self):
+        return self.fiedler_
 
 
     def fit(self, X: ndarray= None, y: ndarray =None) -> None:
@@ -60,7 +70,7 @@ class SpectralClustering(BaseEstimator):
         elif self.similarity_ is not None:
             self.A_ = gt.adjacency_matrix(X, self.similarity_, negative = False)
 
-    def transform(self, X: ndarray = None, y: ndarray  = None, loo = False, fiedler = True) -> tuple:
+    def predict(self, X: ndarray = None, y: ndarray  = None) -> tuple:
         '''
         SVM higherarchical clustering.
 
@@ -80,19 +90,22 @@ class SpectralClustering(BaseEstimator):
         self.A_ = check_array(self.A_)
 
 
-        all_bsr = self.test_cut_loo(X, y)
+        if self.loo_:
+            all_bsr = self.test_cut_loo(X, y)
+        else:
+            all_bsr = self.test_cut(X, y)
 
         nodes = np.arange(len(self.A_))
         clst_nodes = []
         clst_bsrs = []
         clst_mean_edges = []
-        root = Node(0)
+        root = Node(np.mean(self.A_[self.A_!=0]))
         clst_tree = root
         new_root = root
 
         self.cluster_laplace_svm(self.A_, X, y, nodes, clst_nodes, clst_bsrs, 
                                 clst_mean_edges, clst_tree, new_root, previous_bsr = all_bsr, 
-                                fiedler_switch =fiedler, loo = loo)
+                                fiedler_switch =self.fiedler_, loo = self.loo_)
 
         return clst_nodes, clst_bsrs, clst_mean_edges, clst_tree
  
@@ -212,9 +225,7 @@ class SpectralClustering(BaseEstimator):
                                     previous_bsr = bsr2, 
                                     fiedler_switch = True,
                                     loo = loo)
-                
-                
-
+                               
     def test_cut(self, data: ndarray, labels: list) -> float:
         '''
         Train and run an SVM classifier on the data and labels.

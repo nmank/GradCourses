@@ -1010,7 +1010,7 @@ def centrality_scores(A, centrality = 'large_evec', pagerank_d = .85, pagerank_s
                     if np.abs(evals[idx]-1) > 1e-08:
                         print('page rank not converged')
                     
-                connected_scores = v.flatten()
+                connected_scores = v.flatten().real
 
                 scores = np.zeros(A.shape[0])
                 scores[connected_idx] = connected_scores

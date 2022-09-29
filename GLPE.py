@@ -190,7 +190,9 @@ class LPE(GLPE):
 
                 row = np.isin(self.feature_ids_, restricted_feature_names).astype(int)
                 if self.normalize_rows_:
-                    row = row/np.sum(row)
+                    row_sum = np.sum(row)
+                    if row_sum != 0:
+                        row = row/row_sum
 
                 #add to pathway_transition_matrix
                 self.pathway_transition_matrix_.append(row)
@@ -446,11 +448,14 @@ class CLPE(GLPE):
             #normalize degree centrality by maximum degree
             if self.centrality_measure_ == 'degree':
                 degrees = np.sum(A,axis = 0)
-                scores = scores / np.max(degrees)
+                max_deg = np.max(degrees) 
+                if max_deg != 0:
+                    scores = scores / max_deg
 
             #normalize centrality score by l1 norm
-            if self.normalize_rows:
-                scores = scores/np.sum(scores)
+            sum_score = np.sum(scores)
+            if self.normalize_rows and sum_score != 0:
+                scores = scores/sum_score
 
             #add feature scores to row for pathway_transition matrix
             idx = np.array([self.feature_ids_.index(i) for i in feature_idx])
@@ -600,5 +605,10 @@ class CLPE(GLPE):
         
 
         return scores_and_p
+
+
+    
+
+    
 
 

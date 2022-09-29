@@ -4,16 +4,16 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="FlagIRLS",
-    version="0.0.1",
+    name="PathwayAnalysis",
+    version="0.0.3",
     author="Nate Mankovich",
     author_email="Nate.Mankovich@colostate.edu",
     description="A package for subspace averaging and clustering",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/nmank/FlagIRLS",
+    url="https://github.com/nmank/PathwayAnalysis",
     project_urls={
-        "Bug Tracker": "https://github.com/nmank/FlagIRLS/issues",
+        "Bug Tracker": "https://github.com/nmank/PathwayAnalysis/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",

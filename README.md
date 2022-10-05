@@ -17,5 +17,5 @@ git cloning the [PathwayAnalysis](https://github.com/nmank/PathwayAnalysis), goi
 
 ## Tutorials
 
-See the jupyter notebooks in the file ./test_scripts.
+See the jupyter notebooks in the folder ./examples
 

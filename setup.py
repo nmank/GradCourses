@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.4",
     author="Nate Mankovich",
     author_email="Nate.Mankovich@colostate.edu",
-    description="A package for subspace averaging and clustering",
+    description="A package for pathway analysis of transcriptomics data",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/nmank/PathwayAnalysis",

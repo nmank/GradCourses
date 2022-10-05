@@ -2,7 +2,7 @@
 
 PathwayAnalysis is a Python library designed to do the following two tasks.
 * Compute pathway expression data from gene expression data. See the in review paper [Pathway Expression Analysis](https://assets.researchsquare.com/files/rs-1981270/v1_covered.pdf?c=1661534668)
-* Identify small discriminatory gene co-expression modules using spectral hierarchical clustering using a modified version of the iterative spectral clustering algorithm in [Methods for Network...](https://www.proquest.com/intermediateredirectforezproxy)
+* Identify small discriminatory gene co-expression modules using spectral hierarchical clustering using a modified version of the iterative spectral clustering algorithm in [Methods for Network...](https://www.proquest.com/docview/2378897983?pq-origsite=gscholar&fromopenview=true)
 
 
 ## Installation

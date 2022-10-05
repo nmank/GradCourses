@@ -1,18 +1,12 @@
 import numpy as np
-# from sklearn import datasets, linear_model
+
 from sklearn import linear_model
 import scipy.cluster.hierarchy as sch
 import networkx as nx
-# import scipy.spatial.distance as ssd
-# import sklearn
-# from numpy import genfromtxt
-# import sklearn.metrics as sk 
-# import matplotlib
-# include this for katrina
-# matplotlib.use('Agg')
+
 from matplotlib import pyplot as plt
 import pylab
-# from scipy.sparse import linalg 
+
 
 from scipy.spatial.distance import squareform
 import pandas as pd
@@ -67,9 +61,6 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
 
 
     elif msr == 'heatkernel':
-        # Diffs = np.repeat(np.expand_dims(X,axis = 1), m, axis=1)-np.repeat(np.expand_dims(X,axis = 2), m, axis=2)
-        # DistanceMatrix = np.linalg.norm(Diffs, axis= 0)
-        # AdjacencyMatrix = np.exp(-(DistanceMatrix ** 2 /(h_k_param ** 2)))
 
         AdjacencyMatrix = np.zeros((m,m))
 
@@ -77,54 +68,6 @@ def adjacency_matrix(X, msr = 'parcor', epsilon = 0, h_k_param = 2, negative = F
             for j in range(i+1,m):
                 AdjacencyMatrix[i,j] = np.exp(-(np.linalg.norm( X[:,i]-X[:,j], ord = h_k_ord)**2 )/(2*h_k_param))
                 AdjacencyMatrix[j,i] = AdjacencyMatrix[i,j].copy()
-
-    #old partial correlation
-    # elif msr == 'parcor':
-    #     # create linear regression object 
-    #     reg = linear_model.LinearRegression()
-
-    #     vis = list(range(m))
-
-    #     for i in range(m):
-    #         for j in range(m):
-    #             if i > j:
-
-    #                 #compute projections (aka linear regressions)
-    #                 vis.remove(i)
-    #                 vis.remove(j);					
-    #                 reg.fit(X[:,vis], X[:,i]); 
-    #                 x_hat_i = reg.predict(X[:,vis])
-    #                 reg.fit(X[:,vis], X[:,j])
-    #                 x_hat_j = reg.predict(X[:,vis])
-
-    #                 #compute residuals
-    #                 Y_i = X[:,i] - x_hat_i
-    #                 Y_j = X[:,j] - x_hat_j
-
-    #                 Y_in = np.linalg.norm(Y_i)
-    #                 Y_jn = np.linalg.norm(Y_j)
-
-
-    #                 if Y_in == 0 or Y_jn == 0:	
-    #                     tmp = 0
-
-    #                 else:
-    #                     tmp = np.dot(Y_i, Y_j)/(Y_in*Y_jn)
-    #                 if negative == True:
-    #                     PC = tmp
-    #                 else:
-    #                     PC = np.abs(tmp)
-    #                     if epsilon != 0 and PC < epsilon:
-    #                         #get rid of all edges that have weights less than epsilon
-    #                         PC = 0
-    #                 #why are we getting partial correlations of 1?
-    #                 if PC > 1 and PC < 1.0000001:
-    #                     PC = 1
-
-
-    #                 AdjacencyMatrix[i,j] =PC
-    #                 AdjacencyMatrix[j,i] =PC
-    #                 vis = list(range(m))
 
     if epsilon > 0:
         AdjacencyMatrix[AdjacencyMatrix < epsilon] = 0
@@ -230,7 +173,6 @@ def wgcna(x, beta = 1, den_gen = 'average', threshold = 0, den_fname = 'wgcna_de
     axmatrix.set_xticks([])
     axmatrix.set_yticks([])
 
-    #fig.show()
 
     pylab.savefig(den_fname)
 
@@ -638,16 +580,7 @@ def cluster_centers(A, clst_adj, clst_node, centrality = 'degree'):
     newN= np.zeros(nAsz)
     newA = np.zeros((nAsz,nAsz))
 
-    # #count the weighted degree of each node in each cluster
-    # for ii in range(nAsz):
-    #     Aclass = clst_adj[ii]
-    #     Nclass = clst_node[ii]
-    #     Asz = clst_node[ii].size
-    #     score = np.zeros(Asz)
-    #     for i in range(Asz):
-    #         for j in range(Asz):
-    #             if j != i:
-    #                 score[i] += Aclass[i,j]
+
 
     #calculate centrality score of each node in each cluster
     for ii in range(nAsz):
@@ -714,10 +647,6 @@ def linkage_matrix(all_clusters_node, A, clst_dst):
             small_set = set(all_clusters_node[i].tolist())
             big_set = set(all_clusters_node[j].tolist())
             if small_set.issubset(big_set) == True:
-    #             print(all_clusters_node[i])
-    #             print(all_clusters_node[j])
-    #             print(j)
-    #             print('------------------')
                 subsets[i] = j
                 break #removing this break statement would be great!
 
@@ -854,8 +783,7 @@ def plot_dendrogram(all_clusters_node, A, X, clst_dst = 'dumb', fname = 'generat
         idx1 = Z_den['leaves']
         X = X[:,idx1].T
         im = axmatrix.matshow(X, aspect='auto', origin='lower', cmap=pylab.cm.YlGnBu)
-        # if split > 0:
-        #     axmatrix.axvline(split -.5, color = 'white')
+
         cbar = fig.colorbar(im)
         axmatrix.set_xticks([])
         axmatrix.set_yticks([])
